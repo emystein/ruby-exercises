@@ -22,6 +22,7 @@ class ColorComponent
     end
 end
 
+# https://www.codewars.com/kata/5981ff1daf72e8747d000091
 class Potion
     attr_reader :color_components, :volume
   
