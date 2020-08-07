@@ -27,11 +27,13 @@ class Potion
   attr_reader :color, :volume
 
   def initialize(color, volume)
-    @color, @volume = color, volume
+    @color = color
+    @volume = volume
   end
 
   def mix(other)
-    v1, v2 = @volume, other.volume
+    v1 = @volume
+    v2 = other.volume
     Potion.new(@color.zip(other.color).map { |c1, c2| (c1 * v1 + c2 * v2).fdiv(v1 + v2).ceil }, v1 + v2)
   end
 end
