@@ -7,59 +7,62 @@ end
 
 class EffectivenessFactory
   def self.create(type)
-    Object::const_get("#{type.capitalize}Effectiveness").new
+    Object.const_get("#{type.capitalize}Effectiveness").new
   end
 end
 
 class Effectiveness
-    def against(opponent)
-        effectiveness = 0.5
-        
-        if self.class != opponent.class then
-            if self > opponent then
-                effectiveness = 2
-            elsif self == opponent then
-                effectiveness = 1
-            end
-        end
+  def against(opponent)
+    effectiveness = 0.5
 
-        effectiveness
+    if self.class != opponent.class
+      if self > opponent
+        effectiveness = 2
+      elsif self == opponent
+        effectiveness = 1
+      end
     end
+
+    effectiveness
+  end
 end
 
 class FireEffectiveness < Effectiveness
-    def ==(other)
-        other.class == self.class || other.class == ElectricEffectiveness
-    end
+  def ==(other)
+    other.class == self.class || other.class == ElectricEffectiveness
+  end
 
-    def >(other)
-        other.class == GrassEffectiveness
-    end
+  def >(other)
+    other.class == GrassEffectiveness
+  end
 end
 
 class WaterEffectiveness < Effectiveness
-    def ==(other)
-        other.class == self.class
-    end
-    def >(other)
-        other.class == FireEffectiveness
-    end
+  def ==(other)
+    other.class == self.class
+  end
+
+  def >(other)
+    other.class == FireEffectiveness
+  end
 end
 
 class GrassEffectiveness < Effectiveness
-    def ==(other)
-        other.class == self.class || other.class == ElectricEffectiveness
-    end
-    def >(other)
-        other.class == WaterEffectiveness
-    end
+  def ==(other)
+    other.class == self.class || other.class == ElectricEffectiveness
+  end
+
+  def >(other)
+    other.class == WaterEffectiveness
+  end
 end
 
 class ElectricEffectiveness < Effectiveness
-    def ==(other)
-        other.class == self.class || other.class == FireEffectiveness || other.class == GrassEffectiveness
-    end
-    def >(other)
-        other.class == WaterEffectiveness
-    end
+  def ==(other)
+    other.class == self.class || other.class == FireEffectiveness || other.class == GrassEffectiveness
+  end
+
+  def >(other)
+    other.class == WaterEffectiveness
+  end
 end
