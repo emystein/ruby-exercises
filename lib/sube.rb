@@ -9,7 +9,6 @@
 #      en días habiles fue de cinco viajes.
 #      Emjemplo: durante el mes de Marzo todos los dias habiles un usuario hace cinco viajes de 20 pesos cada uno.
 #      Asumiendo que hay 20 dias habiles se lo bonificará con 300 pesos.
-require 'date'
 
 # The Sistema Unico de Boleto Electro'nico (SUBE) system
 class Sube
@@ -32,14 +31,14 @@ class Sube
     @card_owner[card] = user
   end
 
-  def record_trip(ticket_price, card)
+  def record_trip(date_time, ticket_price, card)
     user = @card_owner[card]
 
     ticket_price = @price_calculator.apply_discounts(ticket_price, user)
 
     user.debit(ticket_price)
 
-    user.add_trip(Trip.new(ticket_price, card))
+    user.add_trip(Trip.new(date_time, ticket_price, card))
   end
 end
 
@@ -59,7 +58,7 @@ class TwoTripsWithinLastHourDiscount
   def apply(ticket_price, user)
     return ticket_price if user.trips.empty?
 
-    if (now - user.trips.last.start_time) < one_hour
+    if (now - user.last_trip.start_time) < one_hour
       ticket_price * 0.9
     else
       ticket_price
@@ -163,17 +162,17 @@ end
 
 # Registers a Trip
 class Trip
+  attr_reader :start_time
   attr_reader :ticket_price
   attr_reader :card
-  attr_reader :start_time
 
-  def initialize(ticket_price, card)
+  def initialize(start_time, ticket_price, card)
+    @start_time = start_time
     @ticket_price = ticket_price
     @card = card
-    @start_time = Time.new
   end
 
   def ==(other)
-    @ticket_price == other.ticket_price && @card == other.card && @start_time == other.start_time
+    @start_time == other.start_time && @ticket_price == other.ticket_price && @card == other.card 
   end
 end
