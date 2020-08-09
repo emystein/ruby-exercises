@@ -20,6 +20,8 @@ class Sube
     @users_by_dni = {}
     @money_accounts_by_user = {}
     @card_owner = {}
+    discounts = [TwoTripsWithinLastHourDiscount.new]
+    @price_calculator = PriceCalculator.new(discounts)
     @balance_limit = BalanceLimit.new(-50)
   end
 
@@ -36,16 +38,28 @@ class Sube
   def record_trip(ticket_price, card)
     user = @card_owner[card]
 
-    ticket_price = apply_discounts(ticket_price, card)
+    ticket_price = @price_calculator.apply_discounts(ticket_price, user)
 
     @money_accounts_by_user[user].debit(ticket_price, @balance_limit)
 
     user.add_trip(Trip.new(ticket_price, card))
   end
+end
 
-  def apply_discounts(ticket_price, card)
-    user = @card_owner[card]
+class PriceCalculator
+  def initialize(discounts)
+    @discounts = discounts
+  end
 
+  def apply_discounts(ticket_price, user)
+    @discounts.reduce(ticket_price) do |calculated_price, discount|
+      discount.apply(calculated_price, user)
+    end
+  end
+end
+
+class TwoTripsWithinLastHourDiscount
+  def apply(ticket_price, user)
     return ticket_price if user.trips.empty?
 
     if (now - user.trips.last.start_time) < one_hour
