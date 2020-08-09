@@ -23,8 +23,8 @@ class Sube
     @balance_limit = BalanceLimit.new(-50)
   end
 
-  def register_user(user)
-    @users_by_dni[user.dni] = user
+  def register_user(dni:, name:)
+    @users_by_dni[dni] = User.new(dni, name, MoneyAccount.new(@balance_limit))
   end
 
   def associate_card_to_user(card, user)
@@ -37,7 +37,7 @@ class Sube
 
     ticket_price = @price_calculator.apply_discounts(ticket_price, user)
 
-    user.debit(ticket_price, @balance_limit)
+    user.debit(ticket_price)
 
     user.add_trip(Trip.new(ticket_price, card))
   end
@@ -93,10 +93,10 @@ class User
   attr_reader :cards
   attr_reader :trips
 
-  def initialize(dni, name)
+  def initialize(dni, name, money_account)
     @dni = dni
     @name = name
-    @money_account = MoneyAccount.new(self)
+    @money_account = money_account
     @cards = []
     @trips = []
   end
@@ -113,8 +113,8 @@ class User
     @money_account.credit(amount)
   end
 
-  def debit(amount, balance_limit)
-    @money_account.debit(amount, balance_limit)
+  def debit(amount)
+    @money_account.debit(amount)
   end
 
   def add_trip(trip)
@@ -128,16 +128,11 @@ end
 
 # A money account for a User in the SUBE
 class MoneyAccount
-  attr_reader :owner
   attr_reader :funds
 
-  def initialize(owner)
-    @owner = owner
+  def initialize(balance_limit)
     @funds = 0
-  end
-
-  def ==(other)
-    @owner == other.owner
+    @balance_limit = balance_limit
   end
 
   def credit(amount)
@@ -146,8 +141,8 @@ class MoneyAccount
     @funds += amount
   end
 
-  def debit(amount, balance_limit)
-    balance_limit.check_debit_from_account(amount, self)
+  def debit(amount)
+    @balance_limit.check_debit_from_account(amount, self)
 
     @funds -= amount
   end
