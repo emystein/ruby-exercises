@@ -20,6 +20,7 @@ class Sube
     @users_by_dni = {}
     @money_accounts_by_user = {}
     @card_owner = {}
+    @balance_limit = BalanceLimit.new(-50)
   end
 
   def register_user(user)
@@ -32,20 +33,14 @@ class Sube
     @card_owner[card] = user
   end
 
-  def register_trip(ticket_price, card)
+  def record_trip(ticket_price, card)
     user = @card_owner[card]
-
-    check_funds_are_within_tolerance(ticket_price, @money_accounts_by_user[user])
 
     ticket_price = apply_discounts(ticket_price, card)
 
-    @money_accounts_by_user[user].debit(ticket_price)
+    @money_accounts_by_user[user].debit(ticket_price, @balance_limit)
 
     user.add_trip(Trip.new(ticket_price, card))
-  end
-
-  def check_funds_are_within_tolerance(ticket_price, money_account)
-    raise 'Insufficient funds' if (money_account.funds - ticket_price) < -50
   end
 
   def apply_discounts(ticket_price, card)
@@ -66,6 +61,16 @@ class Sube
 
   def one_hour
     60 * 60
+  end
+end
+
+class BalanceLimit
+  def initialize(limit)
+    @limit = limit
+  end
+
+  def check_debit_from_account(amount_to_debit, account)
+    raise 'Insufficient funds' if (account.funds - amount_to_debit) < @limit
   end
 end
 
@@ -116,7 +121,9 @@ class MoneyAccount
     @funds += amount
   end
 
-  def debit(amount)
+  def debit(amount, balance_limit)
+    balance_limit.check_debit_from_account(amount, self)
+
     @funds -= amount
   end
 end

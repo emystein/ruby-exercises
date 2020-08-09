@@ -17,13 +17,13 @@ describe 'MoneyAccount' do
     end
     it 'Reject credit below 50 pesos when current funds are negative' do
       money_account = MoneyAccount.new(1)
-      money_account.debit(10)
+      money_account.debit(10, BalanceLimit.new(-50))
       expect { money_account.credit(20) }.to raise_error 'Minimum credit must be 50 pesos'
       expect(money_account.funds).to eq(-10)
     end
     it 'Credit more than 50 pesos when current funds are negative' do
       money_account = MoneyAccount.new(1)
-      money_account.debit(10)
+      money_account.debit(10, BalanceLimit.new(-50))
       money_account.credit(60)
       expect(money_account.funds).to eq(50)
     end
@@ -73,7 +73,7 @@ describe 'Sube' do
     it 'register a Trip using positive funds' do
       @money_account.credit(10)
 
-      @sube.register_trip(ticket_price = 10, @card)
+      @sube.record_trip(ticket_price = 10, @card)
 
       registered_trip = @sube.users_by_dni[26_427_162].trips[0]
       expect(registered_trip.ticket_price).to eq ticket_price
@@ -81,9 +81,9 @@ describe 'Sube' do
     end
 
     it 'register a Trip with negative funds within -50 tolerance' do
-      @money_account.debit(20)
+      @money_account.debit(20, BalanceLimit.new(-50))
 
-      @sube.register_trip(ticket_price = 10, @card)
+      @sube.record_trip(ticket_price = 10, @card)
 
       registered_trip = @sube.users_by_dni[26_427_162].trips[0]
       expect(registered_trip.ticket_price).to eq ticket_price
@@ -91,9 +91,9 @@ describe 'Sube' do
     end
 
     it 'reject a Trip due to funds below -50 tolerance' do
-      @money_account.debit(50)
+      @money_account.debit(50, BalanceLimit.new(-50))
 
-      expect { @sube.register_trip(ticket_price = 10, @card) }.to raise_error 'Insufficient funds'
+      expect { @sube.record_trip(ticket_price = 10, @card) }.to raise_error 'Insufficient funds'
 
       expect(@sube.users_by_dni[26_427_162].trips).to be_empty
     end
@@ -102,10 +102,10 @@ describe 'Sube' do
       it 'apply 10% discount on second Trip within 1 hour after first Trip' do
         @money_account.credit(110)
 
-        @sube.register_trip(ticket_price = 10, @card)
+        @sube.record_trip(ticket_price = 10, @card)
         expect(@money_account.funds).to eq 100
 
-        @sube.register_trip(ticket_price = 10, @card)
+        @sube.record_trip(ticket_price = 10, @card)
         expect(@money_account.funds).to eq 91
       end
     end
