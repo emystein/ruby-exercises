@@ -1,9 +1,10 @@
 require 'sube'
+require 'money_extensions'
 require 'time'
 
 describe 'MoneyAccount' do
   before(:each) do
-    @balance_limit = BalanceLimit.new(-50)
+    @balance_limit = BalanceLimit.new(-50.pesos)
   end
 
   it 'MoneyAccount has 0 pesos of funds' do
@@ -13,27 +14,27 @@ describe 'MoneyAccount' do
   describe 'Minimum credit' do
     it 'No minimum when current funds are positive' do
       money_account = MoneyAccount.new(@balance_limit)
-      money_account.credit(10)
-      expect(money_account.funds).to eq 10
+      money_account.credit(10.pesos)
+      expect(money_account.funds).to eq 10.pesos
     end
     it 'Reject credit below 50 pesos when current funds are negative' do
       money_account = MoneyAccount.new(@balance_limit)
-      money_account.debit(10)
-      expect { money_account.credit(20) }.to raise_error 'Minimum credit must be 50 pesos'
-      expect(money_account.funds).to eq(-10)
+      money_account.debit(10.pesos)
+      expect { money_account.credit(20.pesos) }.to raise_error 'Minimum credit must be 50 pesos'
+      expect(money_account.funds).to eq -10.pesos
     end
     it 'Credit more than 50 pesos when current funds are negative' do
       money_account = MoneyAccount.new(@balance_limit)
-      money_account.debit(10)
-      money_account.credit(60)
-      expect(money_account.funds).to eq(50)
+      money_account.debit(10.pesos)
+      money_account.credit(60.pesos)
+      expect(money_account.funds).to eq 50.pesos
     end
   end
 end
 
 describe 'User' do
   before(:each) do
-    @money_account = MoneyAccount.new(BalanceLimit.new(-50))
+    @money_account = MoneyAccount.new(BalanceLimit.new(-50.pesos))
   end
   it 'new User has no trips registered' do
     user = User.new(dni = 26_427_162, name = 'Emiliano Menéndez', @money_account)
@@ -73,53 +74,60 @@ describe 'Sube' do
     end
 
     it 'register a Trip using positive funds' do
-      @user.credit(10)
+      @user.credit(10.pesos)
 
       now = Time.new
+      ticket_price = 10.pesos
 
-      @sube.record_trip(now, ticket_price = 10, @card)
+      @sube.record_trip(now, ticket_price, @card)
 
       expect(@user.last_trip).to eq Trip.new(now, ticket_price, @card)
     end
 
     it 'register a Trip with negative funds within -50 tolerance' do
-      @user.debit(20)
+      @user.debit(20.pesos)
 
       now = Time.new
+      ticket_price = 10.pesos
 
-      @sube.record_trip(now, ticket_price = 10, @card)
+      @sube.record_trip(now, ticket_price, @card)
 
       expect(@user.last_trip).to eq Trip.new(now, ticket_price, @card)
     end
 
     it 'reject a Trip due to funds below -50 tolerance' do
-      @user.debit(50)
+      @user.debit(50.pesos)
 
-      expect { @sube.record_trip(Time.new, ticket_price = 10, @card) }.to raise_error 'Insufficient funds'
+      ticket_price = 10.pesos
+
+      expect { @sube.record_trip(Time.new, ticket_price, @card) }.to raise_error 'Insufficient funds'
 
       expect(@user.trips).to be_empty
     end
 
     describe 'Discounts' do
       it 'apply 10% discount on second Trip within 1 hour after first Trip' do
-        @user.credit(100)
+        @user.credit(100.pesos)
 
-        @sube.record_trip(Time.new, ticket_price = 10, @card)
+        ticket_price = 10.pesos
 
-        expect(@user.money_account.funds).to eq 90
+        @sube.record_trip(Time.new, ticket_price, @card)
 
-        @sube.record_trip(Time.new, ticket_price = 10, @card)
-        expect(@user.money_account.funds).to eq 81
+        expect(@user.money_account.funds).to eq 90.pesos
+
+        @sube.record_trip(Time.new, ticket_price, @card)
+        expect(@user.money_account.funds).to eq 81.pesos
       end
       it 'do not apply 10% discount on second Trip past more than 1 hour after first Trip' do
-        @user.credit(100)
+        @user.credit(100.pesos)
 
-        @sube.record_trip(Time.parse('2020-08-09 13:00:00'), ticket_price = 10, @card)
+        ticket_price = 10.pesos
 
-        expect(@user.money_account.funds).to eq 90
+        @sube.record_trip(Time.parse('2020-08-09 13:00:00'), ticket_price, @card)
+        expect(@user.money_account.funds).to eq 90.pesos
 
-        @sube.record_trip(Time.parse('2020-08-09 15:00:00'), ticket_price = 10, @card)
-        expect(@user.money_account.funds).to eq 80
+        @sube.record_trip(Time.parse('2020-08-09 15:00:00'), ticket_price, @card)
+        expect(@user.money_account.funds).to eq 80.pesos
       end
     end
   end

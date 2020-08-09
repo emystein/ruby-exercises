@@ -10,6 +10,8 @@
 #      Emjemplo: durante el mes de Marzo todos los dias habiles un usuario hace cinco viajes de 20 pesos cada uno.
 #      Asumiendo que hay 20 dias habiles se lo bonificará con 300 pesos.
 
+require 'money_extensions'
+
 # The Sistema Unico de Boleto Electro'nico (SUBE) system
 class Sube
   attr_reader :users_by_dni
@@ -19,7 +21,7 @@ class Sube
     @card_owner = {}
     discounts = [TwoTripsWithinLastHourDiscount.new]
     @price_calculator = PriceCalculator.new(discounts)
-    @balance_limit = BalanceLimit.new(-50)
+    @balance_limit = BalanceLimit.new(-50.pesos)
   end
 
   def register_user(dni:, name:)
@@ -135,7 +137,7 @@ class MoneyAccount
   end
 
   def credit(amount)
-    raise 'Minimum credit must be 50 pesos' if @funds.negative? && amount < 50
+    raise 'Minimum credit must be 50 pesos' if @funds.negative? && amount < 50.pesos
 
     @funds += amount
   end
