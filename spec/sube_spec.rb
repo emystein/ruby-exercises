@@ -1,26 +1,31 @@
 require 'sube'
 
-describe 'Card' do
-  it 'Card has 0 pesos of funds' do
-    expect(Card.new(1).funds).to eq 0
+describe 'MoneyAccount' do
+  before(:each) do
+    @user = User.new(dni = 26_427_162, name = 'Emiliano Menéndez')
   end
+
+  it 'MoneyAccount has 0 pesos of funds' do
+    expect(MoneyAccount.new(@user).funds).to eq 0
+  end
+
   describe 'Minimum credit' do
     it 'No minimum when current funds are positive' do
-      card = Card.new(1)
-      card.credit(10)
-      expect(card.funds).to eq 10
+      money_account = MoneyAccount.new(1)
+      money_account.credit(10)
+      expect(money_account.funds).to eq 10
     end
     it 'Reject credit below 50 pesos when current funds are negative' do
-      card = Card.new(1)
-      card.debit(10)
-      expect { card.credit(20) }.to raise_error 'Minimum credit must be 50 pesos'
-      expect(card.funds).to eq(-10)
+      money_account = MoneyAccount.new(1)
+      money_account.debit(10)
+      expect { money_account.credit(20) }.to raise_error 'Minimum credit must be 50 pesos'
+      expect(money_account.funds).to eq(-10)
     end
     it 'Credit more than 50 pesos when current funds are negative' do
-      card = Card.new(1)
-      card.debit(10)
-      card.credit(60)
-      expect(card.funds).to eq(50)
+      money_account = MoneyAccount.new(1)
+      money_account.debit(10)
+      money_account.credit(60)
+      expect(money_account.funds).to eq(50)
     end
   end
 end
@@ -32,11 +37,12 @@ describe 'User' do
     expect(user.trips).to be_empty
   end
 
-  it 'associates a Card to a User' do
+  it 'associates a MoneyAccount to a User' do
     user = User.new(dni = 26_427_162, name = 'Emiliano Menéndez')
-    user.add_card(Card.new(1))
+    card = Card.new(1)
+    user.add_card(card)
 
-    expect(user.cards).to eq [Card.new(1)]
+    expect(user.cards).to eq [card]
   end
 end
 
@@ -48,7 +54,7 @@ describe 'Sube' do
   end
 
   describe 'User registration' do
-    it 'register a new User and assign a Card' do
+    it 'register a new User and assign a MoneyAccount' do
       @sube.register_user(@user)
 
       @sube.associate_card_to_user(@card, @user)
@@ -60,12 +66,12 @@ describe 'Sube' do
   describe 'Trip record' do
     before(:each) do
       @sube.register_user(@user)
-
+      @money_account = @sube.money_accounts_by_user[@user]
       @sube.associate_card_to_user(@card, @user)
     end
 
     it 'register a Trip using positive funds' do
-      @card.credit(10)
+      @money_account.credit(10)
 
       @sube.register_trip(ticket_price = 10, @card)
 
@@ -75,7 +81,7 @@ describe 'Sube' do
     end
 
     it 'register a Trip with negative funds within -50 tolerance' do
-      @card.debit(20)
+      @money_account.debit(20)
 
       @sube.register_trip(ticket_price = 10, @card)
 
@@ -85,7 +91,7 @@ describe 'Sube' do
     end
 
     it 'reject a Trip due to funds below -50 tolerance' do
-      @card.debit(50)
+      @money_account.debit(50)
 
       expect { @sube.register_trip(ticket_price = 10, @card) }.to raise_error 'Insufficient funds'
 
@@ -94,13 +100,13 @@ describe 'Sube' do
 
     describe 'Discounts' do
       it 'apply 10% discount on second Trip within 1 hour after first Trip' do
-        @card.credit(110)
+        @money_account.credit(110)
 
         @sube.register_trip(ticket_price = 10, @card)
-        expect(@card.funds).to eq 100
+        expect(@money_account.funds).to eq 100
 
         @sube.register_trip(ticket_price = 10, @card)
-        expect(@card.funds).to eq 91
+        expect(@money_account.funds).to eq 91
       end
     end
   end

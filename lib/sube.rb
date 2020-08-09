@@ -14,14 +14,17 @@ require 'date'
 # The Sistema Unico de Boleto Electro'nico (SUBE) system
 class Sube
   attr_reader :users_by_dni
+  attr_reader :money_accounts_by_user
 
   def initialize
     @users_by_dni = {}
+    @money_accounts_by_user = {}
     @card_owner = {}
   end
 
   def register_user(user)
     @users_by_dni[user.dni] = user
+    @money_accounts_by_user[user] = MoneyAccount.new(user)
   end
 
   def associate_card_to_user(card, user)
@@ -30,17 +33,19 @@ class Sube
   end
 
   def register_trip(ticket_price, card)
-    check_funds_are_within_tolerance(ticket_price, card)
+    user = @card_owner[card]
+
+    check_funds_are_within_tolerance(ticket_price, @money_accounts_by_user[user])
 
     ticket_price = apply_discounts(ticket_price, card)
 
-    user = @card_owner[card]
+    @money_accounts_by_user[user].debit(ticket_price)
 
     user.add_trip(Trip.new(ticket_price, card))
   end
 
-  def check_funds_are_within_tolerance(ticket_price, card)
-    raise 'Insufficient funds' if (card.funds - ticket_price) < -50
+  def check_funds_are_within_tolerance(ticket_price, money_account)
+    raise 'Insufficient funds' if (money_account.funds - ticket_price) < -50
   end
 
   def apply_discounts(ticket_price, card)
@@ -87,26 +92,22 @@ class User
   end
 
   def add_trip(trip)
-    card = @cards.find { |c| trip.card == c }
-
-    card.debit(trip.ticket_price)
-
     @trips << trip
   end
 end
 
-# A card used for pay trips.
-class Card
-  attr_reader :id
+# A money account for a User in the SUBE
+class MoneyAccount
+  attr_reader :owner
   attr_reader :funds
 
-  def initialize(id)
-    @id = id
+  def initialize(owner)
+    @owner = owner
     @funds = 0
   end
 
   def ==(other)
-    @id == other.id
+    @owner == other.owner
   end
 
   def credit(amount)
@@ -117,6 +118,19 @@ class Card
 
   def debit(amount)
     @funds -= amount
+  end
+end
+
+# A card used for pay trips.
+class Card
+  attr_reader :id
+
+  def initialize(id)
+    @id = id
+  end
+
+  def ==(other)
+    @id == other.id
   end
 end
 
