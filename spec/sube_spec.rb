@@ -59,54 +59,51 @@ describe 'Sube' do
 
       @sube.associate_card_to_user(@card, @user)
 
-      expect(@sube.users_by_dni[26_427_162].cards).to include @card
+      expect(@user.cards).to include @card
     end
   end
 
   describe 'Trip record' do
     before(:each) do
       @sube.register_user(@user)
-      @money_account = @sube.money_accounts_by_user[@user]
       @sube.associate_card_to_user(@card, @user)
     end
 
     it 'register a Trip using positive funds' do
-      @money_account.credit(10)
+      @user.credit(10)
 
       @sube.record_trip(ticket_price = 10, @card)
 
-      registered_trip = @sube.users_by_dni[26_427_162].trips[0]
-      expect(registered_trip.ticket_price).to eq ticket_price
-      expect(registered_trip.card).to eq @card
+      expect(@user.last_trip.ticket_price).to eq ticket_price
+      expect(@user.last_trip.card).to eq @card
     end
 
     it 'register a Trip with negative funds within -50 tolerance' do
-      @money_account.debit(20, BalanceLimit.new(-50))
+      @user.debit(20, BalanceLimit.new(-50))
 
       @sube.record_trip(ticket_price = 10, @card)
 
-      registered_trip = @sube.users_by_dni[26_427_162].trips[0]
-      expect(registered_trip.ticket_price).to eq ticket_price
-      expect(registered_trip.card).to eq @card
+      expect(@user.last_trip.ticket_price).to eq ticket_price
+      expect(@user.last_trip.card).to eq @card
     end
 
     it 'reject a Trip due to funds below -50 tolerance' do
-      @money_account.debit(50, BalanceLimit.new(-50))
+      @user.debit(50, BalanceLimit.new(-50))
 
       expect { @sube.record_trip(ticket_price = 10, @card) }.to raise_error 'Insufficient funds'
 
-      expect(@sube.users_by_dni[26_427_162].trips).to be_empty
+      expect(@user.trips).to be_empty
     end
 
     describe 'Discounts' do
       it 'apply 10% discount on second Trip within 1 hour after first Trip' do
-        @money_account.credit(110)
+        @user.credit(110)
 
         @sube.record_trip(ticket_price = 10, @card)
-        expect(@money_account.funds).to eq 100
+        expect(@user.money_account.funds).to eq 100
 
         @sube.record_trip(ticket_price = 10, @card)
-        expect(@money_account.funds).to eq 91
+        expect(@user.money_account.funds).to eq 91
       end
     end
   end

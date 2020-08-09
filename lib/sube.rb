@@ -14,11 +14,9 @@ require 'date'
 # The Sistema Unico de Boleto Electro'nico (SUBE) system
 class Sube
   attr_reader :users_by_dni
-  attr_reader :money_accounts_by_user
 
   def initialize
     @users_by_dni = {}
-    @money_accounts_by_user = {}
     @card_owner = {}
     discounts = [TwoTripsWithinLastHourDiscount.new]
     @price_calculator = PriceCalculator.new(discounts)
@@ -27,7 +25,6 @@ class Sube
 
   def register_user(user)
     @users_by_dni[user.dni] = user
-    @money_accounts_by_user[user] = MoneyAccount.new(user)
   end
 
   def associate_card_to_user(card, user)
@@ -40,7 +37,7 @@ class Sube
 
     ticket_price = @price_calculator.apply_discounts(ticket_price, user)
 
-    @money_accounts_by_user[user].debit(ticket_price, @balance_limit)
+    user.debit(ticket_price, @balance_limit)
 
     user.add_trip(Trip.new(ticket_price, card))
   end
@@ -92,12 +89,14 @@ end
 class User
   attr_reader :dni
   attr_reader :name
+  attr_reader :money_account
   attr_reader :cards
   attr_reader :trips
 
   def initialize(dni, name)
     @dni = dni
     @name = name
+    @money_account = MoneyAccount.new(self)
     @cards = []
     @trips = []
   end
@@ -110,8 +109,20 @@ class User
     @cards << card
   end
 
+  def credit(amount)
+    @money_account.credit(amount)
+  end
+
+  def debit(amount, balance_limit)
+    @money_account.debit(amount, balance_limit)
+  end
+
   def add_trip(trip)
     @trips << trip
+  end
+
+  def last_trip
+    @trips.last
   end
 end
 
