@@ -118,6 +118,10 @@ class User
     @money_account.debit(amount)
   end
 
+  def funds
+    @money_account.funds
+  end
+
   def add_trip(trip)
     @trips << trip
   end
