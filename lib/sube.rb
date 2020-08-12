@@ -3,48 +3,45 @@
 # + Agregar fondos a la tarjeta. Si el saldo actual es menor que cero el monto mínimo a cargar debe ser de 50 pesos.
 #      Ejemplo: si tengo -20 pesos, el monto mínimo a cargar debe ser 50 pesos.
 # + Registrar un nuevo viaje y descontar el saldo, teniendo en cuenta que:
-#      - Se aplicará un descuento del 10% si el tiempo transcurrido entre el viaje actual y el último es menor a una hora.
+#      - Se aplicará un descuento del 10% si el tiempo transcurrnumbero entre el viaje actual y el último es menor a una hora.
 #      - Si el saldo resultante es menor a -50 pesos no se podrá realizar el viaje.
-# + Se bonificará al usuario con un 15% de descuento sobre lo consumido en el mes anterior, si el promedio diario
+# + Se bonificará al usuario con un 15% de descuento sobre lo consumnumbero en el mes anterior, si el promedio diario
 #      en días habiles fue de cinco viajes.
 #      Emjemplo: durante el mes de Marzo todos los dias habiles un usuario hace cinco viajes de 20 pesos cada uno.
 #      Asumiendo que hay 20 dias habiles se lo bonificará con 300 pesos.
 
 require 'money_extensions'
 
-# The Sistema Unico de Boleto Electro'nico (SUBE) system
+# The Sistema Unico de Boleto Electro'nico (SUBE) system.
 class Sube
   attr_reader :users_by_dni
 
   def initialize
     @users_by_dni = {}
-    @card_owner = {}
-    discounts = [TwoTripsWithinLastHourDiscount.new]
-    @price_calculator = PriceCalculator.new(discounts)
-    @balance_limit = BalanceLimit.new(-50.pesos)
+    @ticket_price_calculator = TicketPriceCalculator.new([TwoTripsWithinLastHourDiscount.new])
+    @overdraft_limit = OverdraftLimit.new(-50.pesos)
   end
 
   def register_user(dni:, name:)
-    @users_by_dni[dni] = User.new(dni, name, MoneyAccount.new(@balance_limit))
+    @users_by_dni[dni] = RegisteredUser.new(dni, name, MoneyAccount.new(@overdraft_limit))
   end
 
   def associate_card_to_user(card, user)
+    card.owner = user
     @users_by_dni[user.dni].add_card(card)
-    @card_owner[card] = user
   end
 
   def record_trip(date_time, ticket_price, card)
-    user = @card_owner[card]
+    ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, card.owner)
 
-    ticket_price = @price_calculator.apply_discounts(ticket_price, user)
+    card.debit(ticket_price)
 
-    user.debit(ticket_price)
-
-    user.add_trip(Trip.new(date_time, ticket_price, card))
+    card.owner.add_trip(Trip.new(date_time, ticket_price, card))
   end
 end
 
-class PriceCalculator
+# Calculates a the total price of a Ticket.
+class TicketPriceCalculator
   def initialize(discounts)
     @discounts = discounts
   end
@@ -56,6 +53,7 @@ class PriceCalculator
   end
 end
 
+# Applies 10% percent discount on the price of a trip, if it starts within the first hour of the previous trip
 class TwoTripsWithinLastHourDiscount
   def apply(ticket_price, user)
     return ticket_price if user.trips.empty?
@@ -76,22 +74,46 @@ class TwoTripsWithinLastHourDiscount
   end
 end
 
-class BalanceLimit
+class OverdraftLimit
   def initialize(limit)
     @limit = limit
   end
 
   def check_debit_from_account(amount_to_debit, account)
-    raise 'Insufficient funds' if (account.funds - amount_to_debit) < @limit
+    raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
+  end
+end
+
+class UnregisteredUser
+  attr_reader :card
+  attr_reader :money_account
+  attr_reader :trips
+
+  def initialize(card, money_account)
+    @card = card
+    @money_account = money_account
+    @trips = []
+  end
+
+  def ==(other)
+    @card == other.card
+  end
+
+  def add_trip(trip)
+    @trips << trip
+  end
+
+  def last_trip
+    @trips.last
   end
 end
 
 # A user of SUBE
-class User
+class RegisteredUser
   attr_reader :dni
   attr_reader :name
-  attr_reader :money_account
   attr_reader :cards
+  attr_reader :money_account
   attr_reader :trips
 
   def initialize(dni, name, money_account)
@@ -110,18 +132,6 @@ class User
     @cards << card
   end
 
-  def credit(amount)
-    @money_account.credit(amount)
-  end
-
-  def debit(amount)
-    @money_account.debit(amount)
-  end
-
-  def funds
-    @money_account.funds
-  end
-
   def add_trip(trip)
     @trips << trip
   end
@@ -133,36 +143,56 @@ end
 
 # A money account for a User in the SUBE
 class MoneyAccount
-  attr_reader :funds
+  attr_reader :balance
 
-  def initialize(balance_limit)
-    @funds = 0
-    @balance_limit = balance_limit
+  def initialize(overdraft_limit)
+    @balance = 0
+    @overdraft_limit = overdraft_limit
   end
 
   def credit(amount)
-    raise 'Minimum credit must be 50 pesos' if @funds.negative? && amount < 50.pesos
+    raise 'Minimum credit must be 50 pesos' if @balance.negative? && amount < 50.pesos
 
-    @funds += amount
+    @balance += amount
   end
 
   def debit(amount)
-    @balance_limit.check_debit_from_account(amount, self)
+    @overdraft_limit.check_debit_from_account(amount, self)
 
-    @funds -= amount
+    @balance -= amount
   end
 end
 
-# A card used for pay trips.
+# A plastic card used for pay trips.
 class Card
-  attr_reader :id
+  attr_reader :number
+  attr_reader :money_account
+  attr_accessor :owner
 
-  def initialize(id)
-    @id = id
+  def initialize(number, money_account)
+    @number = number
+    @money_account = money_account
+    @owner = UnregisteredUser.new(self, money_account)
   end
 
   def ==(other)
-    @id == other.id
+    @number == other.number
+  end
+
+  def credit(amount)
+    @money_account.credit(amount)
+  end
+
+  def debit(amount)
+    @money_account.debit(amount)
+  end
+
+  def add_trip(trip)
+    @owner.add_trip(trip)
+  end
+
+  def last_trip
+    @owner.last_trip
   end
 end
 
@@ -179,6 +209,6 @@ class Trip
   end
 
   def ==(other)
-    @start_time == other.start_time && @ticket_price == other.ticket_price && @card == other.card 
+    @start_time == other.start_time && @ticket_price == other.ticket_price && @card == other.card
   end
 end
