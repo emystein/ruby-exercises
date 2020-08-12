@@ -4,21 +4,23 @@ require 'time'
 
 describe 'MoneyAccount' do
   before(:each) do
+    @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
     @overdraft_limit = OverdraftLimit.new(-50.pesos)
   end
 
   it 'starts with no balance' do
-    expect(MoneyAccount.new(@overdraft_limit).balance).to eq 0
+    expect(MoneyAccount.new(@credit_precondition, @overdraft_limit).balance).to eq 0
   end
 end
 
 describe 'MoneyAccount credit' do
   before(:each) do
+    @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
     @overdraft_limit = OverdraftLimit.new(-50.pesos)
   end
 
   it 'no minimum when current balance are positive' do
-    account = MoneyAccount.new(@overdraft_limit)
+    account = MoneyAccount.new(@credit_precondition, @overdraft_limit)
 
     account.credit(10.pesos)
 
@@ -26,7 +28,7 @@ describe 'MoneyAccount credit' do
   end
 
   it 'reject less than 50 pesos credit when current balance are negative' do
-    account = MoneyAccount.new(@overdraft_limit)
+    account = MoneyAccount.new(@credit_precondition, @overdraft_limit)
 
     account.debit(10.pesos)
 
@@ -35,7 +37,7 @@ describe 'MoneyAccount credit' do
   end
 
   it 'accept more than 50 pesos credit when current balance are negative' do
-    account = MoneyAccount.new(@overdraft_limit)
+    account = MoneyAccount.new(@credit_precondition, @overdraft_limit)
 
     account.debit(10.pesos)
     account.credit(60.pesos)
@@ -46,24 +48,20 @@ end
 
 describe 'Registered User' do
   before(:each) do
-    @money_account = MoneyAccount.new(OverdraftLimit.new(-50.pesos))
+    @money_account = MoneyAccount.new(NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
+    @user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez', @money_account)
   end
 
-  it 'new User has no trips registered' do
-    user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez', @money_account)
-
-    expect(user.trips).to be_empty
-  end
-
-  it 'associates a Card to a User' do
-    user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez', @money_account)
+  it 'add a Card' do
     card = Card.new(1, @money_account)
 
-    user.add_card(card)
+    @user.add_card(card)
 
-    expect(user.cards).to eq [card]
+    expect(@user.cards).to eq [card]
   end
+end
 
+describe 'Sube' do
   it 'register a new User and associate a Card' do
     sube = Sube.new
 
@@ -81,7 +79,7 @@ describe 'Trip record' do
   before(:each) do
     @sube = Sube.new
     # @user = @sube.register_user(dni: 26_427_162, name: 'Emiliano Menéndez')
-    @money_account = MoneyAccount.new(OverdraftLimit.new(-50.pesos))
+    @money_account = MoneyAccount.new(NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
     @card = Card.new(1, @money_account)
     # @sube.associate_card_to_user(@card, @user)
   end
@@ -110,13 +108,14 @@ describe 'Trip record' do
     end
   end
 
-  describe 'Discount on Trip' do
+  describe 'Discount on Ticket Price' do
     it 'apply 10% discount within one hour after previous Trip' do
       @card.credit(100.pesos)
 
       record_10_pesos_trip_with_final_balance(Time.new, 90.pesos)
       record_10_pesos_trip_with_final_balance(Time.new, 81.pesos)
     end
+
     it 'do not apply 10% discount past one hour after previous Trip' do
       @card.credit(100.pesos)
 

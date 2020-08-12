@@ -19,11 +19,12 @@ class Sube
   def initialize
     @users_by_dni = {}
     @ticket_price_calculator = TicketPriceCalculator.new([TwoTripsWithinLastHourDiscount.new])
+    @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
     @overdraft_limit = OverdraftLimit.new(-50.pesos)
   end
 
   def register_user(dni:, name:)
-    @users_by_dni[dni] = RegisteredUser.new(dni, name, MoneyAccount.new(@overdraft_limit))
+    @users_by_dni[dni] = RegisteredUser.new(dni, name, MoneyAccount.new(@credit_precondition, @overdraft_limit))
   end
 
   def associate_card_to_user(card, user)
@@ -71,16 +72,6 @@ class TwoTripsWithinLastHourDiscount
 
   def one_hour
     60 * 60
-  end
-end
-
-class OverdraftLimit
-  def initialize(limit)
-    @limit = limit
-  end
-
-  def check_debit_from_account(amount_to_debit, account)
-    raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
   end
 end
 
@@ -145,13 +136,14 @@ end
 class MoneyAccount
   attr_reader :balance
 
-  def initialize(overdraft_limit)
+  def initialize(credit_precondition, overdraft_limit)
     @balance = 0
+    @credit_precondition = credit_precondition
     @overdraft_limit = overdraft_limit
   end
 
   def credit(amount)
-    raise 'Minimum credit must be 50 pesos' if @balance.negative? && amount < 50.pesos
+    @credit_precondition.check(amount, self)
 
     @balance += amount
   end
@@ -160,6 +152,30 @@ class MoneyAccount
     @overdraft_limit.check_debit_from_account(amount, self)
 
     @balance -= amount
+  end
+
+  def negative_balance?
+    @balance.negative?
+  end
+end
+
+class NegativeBalanceMinimumCredit
+  def initialize(minimum_credit)
+    @minimum_credit = minimum_credit
+  end
+
+  def check(amount_to_deposit, target_account)
+    raise 'Minimum credit must be 50 pesos' if target_account.negative_balance? && amount_to_deposit < @minimum_credit
+  end
+end
+
+class OverdraftLimit
+  def initialize(limit)
+    @limit = limit
+  end
+
+  def check_debit_from_account(amount_to_debit, account)
+    raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
   end
 end
 
