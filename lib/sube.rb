@@ -77,49 +77,77 @@ class Bank
   end
 end
 
+# A money account for a User in the SUBE
+class MoneyAccount
+  attr_reader :number
+  attr_reader :balance
+  attr_reader :credit_precondition
+  attr_reader :overdraft_limit
+
+  def self.create(credit_precondition, overdraft_limit)
+    MoneyAccount.new(MoneyAccountNumberGenerator.new.generate, credit_precondition, overdraft_limit)
+  end
+
+  def initialize(number, credit_precondition, overdraft_limit)
+    @number = number
+    @credit_precondition = credit_precondition
+    @overdraft_limit = overdraft_limit
+    @balance = 0
+  end
+
+  def credit(amount)
+    @credit_precondition.check(amount, self)
+
+    @balance += amount
+  end
+
+  def debit(amount)
+    @overdraft_limit.check_debit_from_account(amount, self)
+
+    @balance -= amount
+  end
+
+  def negative_balance?
+    @balance.negative?
+  end
+end
+
 class MoneyAccountNumberGenerator
   def generate
     rand 100_000_000_000
   end
 end
 
+# A plastic card used for pay trips.
+class Card
+  attr_reader :number
+  attr_accessor :owner
+
+  def self.create
+    Card.new(CreditCardNumberGenerator.new.generate)
+  end
+
+  def initialize(number)
+    @number = number
+    @owner = UnregisteredUser.new(self)
+  end
+
+  def ==(other)
+    @number == other.number
+  end
+
+  def add_trip(trip)
+    @owner.add_trip(trip)
+  end
+
+  def last_trip
+    @owner.last_trip
+  end
+end
+
 class CreditCardNumberGenerator
   def generate
     Array.new(16) { Array('0'..'9').sample }.join
-  end
-end
-
-# Calculates a the total price of a Ticket.
-class TicketPriceCalculator
-  def initialize(discounts)
-    @discounts = discounts
-  end
-
-  def apply_discounts(ticket_price, user)
-    @discounts.reduce(ticket_price) do |calculated_price, discount|
-      discount.apply(calculated_price, user)
-    end
-  end
-end
-
-# Applies 10% percent discount on the price of a trip, if it starts within the first hour of the previous trip
-class TwoTripsWithinLastHourDiscount
-  def apply(ticket_price, user)
-    return ticket_price if user.trips.empty?
-
-    if (now - user.last_trip.start_time) < one_hour
-      ticket_price * 0.9
-    else
-      ticket_price
-    end
-  end
-
-  def now
-    Time.new
-  end
-
-  def one_hour
-    60 * 60
   end
 end
 
@@ -178,100 +206,6 @@ class RegisteredUser
   end
 end
 
-# A money account for a User in the SUBE
-class MoneyAccount
-  attr_reader :number
-  attr_reader :balance
-  attr_reader :credit_precondition
-  attr_reader :overdraft_limit
-
-  def self.create(credit_precondition, overdraft_limit)
-    MoneyAccount.new(MoneyAccountNumberGenerator.new.generate, credit_precondition, overdraft_limit)
-  end
-
-  def initialize(number, credit_precondition, overdraft_limit)
-    @number = number
-    @credit_precondition = credit_precondition
-    @overdraft_limit = overdraft_limit
-    @balance = 0
-  end
-
-  def credit(amount)
-    @credit_precondition.check(amount, self)
-
-    @balance += amount
-  end
-
-  def debit(amount)
-    @overdraft_limit.check_debit_from_account(amount, self)
-
-    @balance -= amount
-  end
-
-  def negative_balance?
-    @balance.negative?
-  end
-end
-
-class NegativeBalanceMinimumCredit
-  attr_reader :minimum_credit
-
-  def initialize(minimum_credit)
-    @minimum_credit = minimum_credit
-  end
-
-  def ==(other)
-    @minimum_credit == other.minimum_credit
-  end
-
-  def check(amount_to_deposit, target_account)
-    raise 'Minimum credit must be 50 pesos' if target_account.negative_balance? && amount_to_deposit < @minimum_credit
-  end
-end
-
-class OverdraftLimit
-  attr_reader :limit
-
-  def initialize(limit)
-    @limit = limit
-  end
-
-  def ==(other)
-    @limit == other.limit
-  end
-
-  def check_debit_from_account(amount_to_debit, account)
-    raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
-  end
-end
-
-# A plastic card used for pay trips.
-class Card
-  attr_reader :number
-  attr_accessor :owner
-
-  def self.create
-    Card.new(CreditCardNumberGenerator.new.generate)
-  end
-
-  def initialize(number)
-    @number = number
-    @owner = UnregisteredUser.new(self)
-  end
-
-  def ==(other)
-    @number == other.number
-  end
-
-  def add_trip(trip)
-    @owner.add_trip(trip)
-  end
-
-  def last_trip
-    @owner.last_trip
-  end
-end
-
 # Registers a Trip
 class Trip
   attr_reader :start_time
@@ -286,5 +220,59 @@ class Trip
 
   def ==(other)
     @start_time == other.start_time && @ticket_price == other.ticket_price && @card == other.card
+  end
+end
+
+# Calculates a the total price of a Ticket.
+class TicketPriceCalculator
+  def initialize(discounts)
+    @discounts = discounts
+  end
+
+  def apply_discounts(ticket_price, user)
+    @discounts.reduce(ticket_price) do |calculated_price, discount|
+      discount.apply(calculated_price, user)
+    end
+  end
+end
+
+# Applies 10% percent discount on the price of a trip, if it starts within the first hour of the previous trip
+class TwoTripsWithinLastHourDiscount
+  def apply(ticket_price, user)
+    return ticket_price if user.trips.empty?
+
+    if (now - user.last_trip.start_time) < one_hour
+      ticket_price * 0.9
+    else
+      ticket_price
+    end
+  end
+
+  def now
+    Time.new
+  end
+
+  def one_hour
+    60 * 60
+  end
+end
+
+class NegativeBalanceMinimumCredit
+  def initialize(minimum_credit)
+    @minimum_credit = minimum_credit
+  end
+
+  def check(amount_to_deposit, target_account)
+    raise 'Minimum credit must be 50 pesos' if target_account.negative_balance? && amount_to_deposit < @minimum_credit
+  end
+end
+
+class OverdraftLimit
+  def initialize(limit)
+    @limit = limit
+  end
+
+  def check_debit_from_account(amount_to_debit, account)
+    raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
   end
 end
