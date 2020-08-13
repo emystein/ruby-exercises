@@ -14,10 +14,10 @@ require 'money_extensions'
 
 # The Sistema Unico de Boleto Electro'nico (SUBE) system.
 class Sube
-  attr_reader :users_by_dni
+  attr_reader :user_by_dni
 
   def initialize
-    @users_by_dni = {}
+    @user_by_dni = {}
     @bank = Bank.new
     @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
     @overdraft_limit = OverdraftLimit.new(-50.pesos)
@@ -25,67 +25,65 @@ class Sube
   end
 
   def create_card
-    @bank.create_card(create_money_account)
+    @bank.create_card(create_bank_account)
   end
 
-  def money_account_of_card(card)
-    @bank.money_account_of_card(card)
+  def bank_account_by_card(card)
+    @bank.account_by_card[card]
   end
 
   def register_user(dni:, name:)
-    @users_by_dni[dni] = RegisteredUser.new(dni, name, create_money_account)
+    @user_by_dni[dni] = RegisteredUser.new(dni, name, create_bank_account)
   end
 
   def associate_card_to_user(card, user)
     card.owner = user
-    @users_by_dni[user.dni].add_card(card)
+    @user_by_dni[user.dni].add_card(card)
   end
 
   def record_trip(date_time, ticket_price, card)
     ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, card.owner)
 
-    money_account_of_card(card).debit(ticket_price)
+    bank_account_by_card(card).withdraw(ticket_price)
 
     card.owner.add_trip(Trip.new(date_time, ticket_price, card))
   end
 
   private
 
-  def create_money_account
-    @bank.create_money_account(@credit_precondition, @overdraft_limit)
+  def create_bank_account
+    @bank.create_account(@credit_precondition, @overdraft_limit)
   end
 end
 
 # The Bank
 class Bank
+  attr_reader :account_by_card
+
   def initialize
-    @money_accounts_by_card = {}
+    @account_by_card = {}
   end
 
-  def create_money_account(credit_precondition, overdraft_limit)
-    MoneyAccount.create(credit_precondition, overdraft_limit)
+  def create_account(credit_precondition, overdraft_limit)
+    BankAccount.create(credit_precondition, overdraft_limit)
   end
 
   def create_card(money_account)
     card = Card.create
-    @money_accounts_by_card[card] = money_account
+    @account_by_card[card] = money_account
     card
-  end
-
-  def money_account_of_card(card)
-    @money_accounts_by_card[card]
   end
 end
 
 # A money account for a User in the SUBE
-class MoneyAccount
+class BankAccount
   attr_reader :number
   attr_reader :balance
   attr_reader :credit_precondition
   attr_reader :overdraft_limit
 
   def self.create(credit_precondition, overdraft_limit)
-    MoneyAccount.new(MoneyAccountNumberGenerator.new.generate, credit_precondition, overdraft_limit)
+    BankAccount.new(BankAccountNumberGenerator.new.generate, credit_precondition, overdraft_limit)
   end
 
   def initialize(number, credit_precondition, overdraft_limit)
@@ -95,13 +93,13 @@ class MoneyAccount
     @balance = 0
   end
 
-  def credit(amount)
+  def deposit(amount)
     @credit_precondition.check(amount, self)
 
     @balance += amount
   end
 
-  def debit(amount)
+  def withdraw(amount)
     @overdraft_limit.check_debit_from_account(amount, self)
 
     @balance -= amount
@@ -112,7 +110,7 @@ class MoneyAccount
   end
 end
 
-class MoneyAccountNumberGenerator
+class BankAccountNumberGenerator
   def generate
     rand 100_000_000_000
   end
