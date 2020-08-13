@@ -25,7 +25,8 @@ class Sube
   end
 
   def create_card
-    @bank.create_card(create_bank_account)
+    bank_account = @bank.create_account(@credit_precondition, @overdraft_limit)
+    @bank.create_card(bank_account)
   end
 
   def bank_account_by_card(card)
@@ -33,7 +34,7 @@ class Sube
   end
 
   def register_user(dni:, name:)
-    @user_by_dni[dni] = RegisteredUser.new(dni, name, create_bank_account)
+    @user_by_dni[dni] = RegisteredUser.new(dni, name)
   end
 
   def associate_card_to_user(card, user)
@@ -47,12 +48,6 @@ class Sube
     bank_account_by_card(card).withdraw(ticket_price)
 
     card.owner.add_trip(Trip.new(date_time, ticket_price, card))
-  end
-
-  private
-
-  def create_bank_account
-    @bank.create_account(@credit_precondition, @overdraft_limit)
   end
 end
 
@@ -100,7 +95,7 @@ class BankAccount
   end
 
   def withdraw(amount)
-    @overdraft_limit.check_debit_from_account(amount, self)
+    @overdraft_limit.check(amount, self)
 
     @balance -= amount
   end
@@ -176,13 +171,11 @@ class RegisteredUser
   attr_reader :dni
   attr_reader :name
   attr_reader :cards
-  attr_reader :money_account
   attr_reader :trips
 
-  def initialize(dni, name, money_account)
+  def initialize(dni, name)
     @dni = dni
     @name = name
-    @money_account = money_account
     @cards = []
     @trips = []
   end
@@ -270,7 +263,7 @@ class OverdraftLimit
     @limit = limit
   end
 
-  def check_debit_from_account(amount_to_debit, account)
+  def check(amount_to_debit, account)
     raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
   end
 end

@@ -49,8 +49,7 @@ end
 describe 'Registered User' do
   before(:each) do
     @bank = Bank.new
-    @money_account = BankAccount.new(1, NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
-    @user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez', @money_account)
+    @user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez')
   end
 
   it 'add a Card' do
@@ -79,10 +78,8 @@ end
 describe 'Trip record' do
   before(:each) do
     @sube = Sube.new
-    # @user = @sube.register_user(dni: 26_427_162, name: 'Emiliano Menéndez')
     @money_account = BankAccount.new(1, NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
     @card = @sube.create_card
-    # @sube.associate_card_to_user(@card, @user)
   end
 
   describe 'Accept Trip' do
