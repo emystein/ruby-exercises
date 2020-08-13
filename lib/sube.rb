@@ -18,13 +18,22 @@ class Sube
 
   def initialize
     @users_by_dni = {}
-    @ticket_price_calculator = TicketPriceCalculator.new([TwoTripsWithinLastHourDiscount.new])
+    @bank = Bank.new
     @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
     @overdraft_limit = OverdraftLimit.new(-50.pesos)
+    @ticket_price_calculator = TicketPriceCalculator.new([TwoTripsWithinLastHourDiscount.new])
+  end
+
+  def create_card
+    @bank.create_card(create_money_account)
+  end
+
+  def money_account_of_card(card)
+    @bank.money_account_of_card(card)
   end
 
   def register_user(dni:, name:)
-    @users_by_dni[dni] = RegisteredUser.new(dni, name, MoneyAccount.new(@credit_precondition, @overdraft_limit))
+    @users_by_dni[dni] = RegisteredUser.new(dni, name, create_money_account)
   end
 
   def associate_card_to_user(card, user)
@@ -35,9 +44,48 @@ class Sube
   def record_trip(date_time, ticket_price, card)
     ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, card.owner)
 
-    card.debit(ticket_price)
+    money_account_of_card(card).debit(ticket_price)
 
     card.owner.add_trip(Trip.new(date_time, ticket_price, card))
+  end
+
+  private
+
+  def create_money_account
+    @bank.create_money_account(@credit_precondition, @overdraft_limit)
+  end
+end
+
+# The Bank
+class Bank
+  def initialize
+    @money_accounts_by_card = {}
+  end
+
+  def create_money_account(credit_precondition, overdraft_limit)
+    MoneyAccount.create(credit_precondition, overdraft_limit)
+  end
+
+  def create_card(money_account)
+    card = Card.create
+    @money_accounts_by_card[card] = money_account
+    card
+  end
+
+  def money_account_of_card(card)
+    @money_accounts_by_card[card]
+  end
+end
+
+class MoneyAccountNumberGenerator
+  def generate
+    rand 100_000_000_000
+  end
+end
+
+class CreditCardNumberGenerator
+  def generate
+    Array.new(16) { Array('0'..'9').sample }.join
   end
 end
 
@@ -77,12 +125,10 @@ end
 
 class UnregisteredUser
   attr_reader :card
-  attr_reader :money_account
   attr_reader :trips
 
-  def initialize(card, money_account)
+  def initialize(card)
     @card = card
-    @money_account = money_account
     @trips = []
   end
 
@@ -134,12 +180,20 @@ end
 
 # A money account for a User in the SUBE
 class MoneyAccount
+  attr_reader :number
   attr_reader :balance
+  attr_reader :credit_precondition
+  attr_reader :overdraft_limit
 
-  def initialize(credit_precondition, overdraft_limit)
-    @balance = 0
+  def self.create(credit_precondition, overdraft_limit)
+    MoneyAccount.new(MoneyAccountNumberGenerator.new.generate, credit_precondition, overdraft_limit)
+  end
+
+  def initialize(number, credit_precondition, overdraft_limit)
+    @number = number
     @credit_precondition = credit_precondition
     @overdraft_limit = overdraft_limit
+    @balance = 0
   end
 
   def credit(amount)
@@ -160,8 +214,14 @@ class MoneyAccount
 end
 
 class NegativeBalanceMinimumCredit
+  attr_reader :minimum_credit
+
   def initialize(minimum_credit)
     @minimum_credit = minimum_credit
+  end
+
+  def ==(other)
+    @minimum_credit == other.minimum_credit
   end
 
   def check(amount_to_deposit, target_account)
@@ -170,8 +230,14 @@ class NegativeBalanceMinimumCredit
 end
 
 class OverdraftLimit
+  attr_reader :limit
+
   def initialize(limit)
     @limit = limit
+  end
+
+  def ==(other)
+    @limit == other.limit
   end
 
   def check_debit_from_account(amount_to_debit, account)
@@ -182,25 +248,19 @@ end
 # A plastic card used for pay trips.
 class Card
   attr_reader :number
-  attr_reader :money_account
   attr_accessor :owner
 
-  def initialize(number, money_account)
+  def self.create
+    Card.new(CreditCardNumberGenerator.new.generate)
+  end
+
+  def initialize(number)
     @number = number
-    @money_account = money_account
-    @owner = UnregisteredUser.new(self, money_account)
+    @owner = UnregisteredUser.new(self)
   end
 
   def ==(other)
     @number == other.number
-  end
-
-  def credit(amount)
-    @money_account.credit(amount)
-  end
-
-  def debit(amount)
-    @money_account.debit(amount)
   end
 
   def add_trip(trip)

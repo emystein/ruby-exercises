@@ -9,7 +9,7 @@ describe 'MoneyAccount' do
   end
 
   it 'starts with no balance' do
-    expect(MoneyAccount.new(@credit_precondition, @overdraft_limit).balance).to eq 0
+    expect(MoneyAccount.new(1, @credit_precondition, @overdraft_limit).balance).to eq 0
   end
 end
 
@@ -20,7 +20,7 @@ describe 'MoneyAccount credit' do
   end
 
   it 'no minimum when current balance are positive' do
-    account = MoneyAccount.new(@credit_precondition, @overdraft_limit)
+    account = MoneyAccount.new(1, @credit_precondition, @overdraft_limit)
 
     account.credit(10.pesos)
 
@@ -28,7 +28,7 @@ describe 'MoneyAccount credit' do
   end
 
   it 'reject less than 50 pesos credit when current balance are negative' do
-    account = MoneyAccount.new(@credit_precondition, @overdraft_limit)
+    account = MoneyAccount.new(1, @credit_precondition, @overdraft_limit)
 
     account.debit(10.pesos)
 
@@ -37,7 +37,7 @@ describe 'MoneyAccount credit' do
   end
 
   it 'accept more than 50 pesos credit when current balance are negative' do
-    account = MoneyAccount.new(@credit_precondition, @overdraft_limit)
+    account = MoneyAccount.new(1, @credit_precondition, @overdraft_limit)
 
     account.debit(10.pesos)
     account.credit(60.pesos)
@@ -48,12 +48,13 @@ end
 
 describe 'Registered User' do
   before(:each) do
-    @money_account = MoneyAccount.new(NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
+    @bank = Bank.new
+    @money_account = MoneyAccount.new(1, NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
     @user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez', @money_account)
   end
 
   it 'add a Card' do
-    card = Card.new(1, @money_account)
+    card = @bank.create_card(@money_account)
 
     @user.add_card(card)
 
@@ -65,7 +66,7 @@ describe 'Sube' do
   it 'register a new User and associate a Card' do
     sube = Sube.new
 
-    card = Card.new(1, @money_account)
+    card = sube.create_card
 
     user = sube.register_user(dni: 26_427_162, name: 'Emiliano Menéndez')
 
@@ -79,20 +80,20 @@ describe 'Trip record' do
   before(:each) do
     @sube = Sube.new
     # @user = @sube.register_user(dni: 26_427_162, name: 'Emiliano Menéndez')
-    @money_account = MoneyAccount.new(NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
-    @card = Card.new(1, @money_account)
+    @money_account = MoneyAccount.new(1, NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
+    @card = @sube.create_card
     # @sube.associate_card_to_user(@card, @user)
   end
 
   describe 'Accept Trip' do
     it 'use positive balance' do
-      @card.credit(10.pesos)
+      @sube.money_account_of_card(@card).credit(10.pesos)
 
       record_10_pesos_trip(Time.new)
     end
 
     it 'use negative balance within -50 tolerance' do
-      @card.debit(20.pesos)
+      @sube.money_account_of_card(@card).debit(20.pesos)
 
       record_10_pesos_trip(Time.new)
     end
@@ -100,7 +101,7 @@ describe 'Trip record' do
 
   describe 'Reject Trip' do
     it 'due to balance below -50 tolerance' do
-      @card.debit(50.pesos)
+      @sube.money_account_of_card(@card).debit(50.pesos)
 
       expect { @sube.record_trip(Time.new, 10.pesos, @card) }.to raise_error 'Insufficient funds'
 
@@ -110,14 +111,14 @@ describe 'Trip record' do
 
   describe 'Discount on Ticket Price' do
     it 'apply 10% discount within one hour after previous Trip' do
-      @card.credit(100.pesos)
+      @sube.money_account_of_card(@card).credit(100.pesos)
 
       record_10_pesos_trip_with_final_balance(Time.new, 90.pesos)
       record_10_pesos_trip_with_final_balance(Time.new, 81.pesos)
     end
 
     it 'do not apply 10% discount past one hour after previous Trip' do
-      @card.credit(100.pesos)
+      @sube.money_account_of_card(@card).credit(100.pesos)
 
       record_10_pesos_trip_with_final_balance(Time.parse('2020-08-09 13:00:00'), 90.pesos)
       record_10_pesos_trip_with_final_balance(Time.parse('2020-08-09 15:00:00'), 80.pesos)
@@ -134,5 +135,5 @@ end
 def record_10_pesos_trip_with_final_balance(trip_start, final_balance)
   @sube.record_trip(trip_start, 10.pesos, @card)
 
-  expect(@card.money_account.balance).to eq final_balance
+  expect(@sube.money_account_of_card(@card).balance).to eq final_balance
 end
