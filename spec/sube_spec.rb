@@ -78,19 +78,19 @@ end
 describe 'Trip record' do
   before(:each) do
     @sube = Sube.new
-    @money_account = BankAccount.new(1, NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
     @card = @sube.create_card
+    @bank_account = @sube.bank_account_by_card(@card)
   end
 
   describe 'Accept Trip' do
     it 'use positive balance' do
-      @sube.bank_account_by_card(@card).deposit(10.pesos)
+      @bank_account.deposit(10.pesos)
 
       record_10_pesos_trip(Time.new)
     end
 
     it 'use negative balance within -50 tolerance' do
-      @sube.bank_account_by_card(@card).withdraw(20.pesos)
+      @bank_account.withdraw(20.pesos)
 
       record_10_pesos_trip(Time.new)
     end
@@ -98,7 +98,7 @@ describe 'Trip record' do
 
   describe 'Reject Trip' do
     it 'due to balance below -50 tolerance' do
-      @sube.bank_account_by_card(@card).withdraw(50.pesos)
+      @bank_account.withdraw(50.pesos)
 
       expect { @sube.record_trip(Trip.new(Time.new, 10.pesos, @card)) }.to raise_error 'Insufficient funds'
 
@@ -108,14 +108,14 @@ describe 'Trip record' do
 
   describe 'Discount on Ticket Price' do
     it 'apply 10% discount within one hour after previous Trip' do
-      @sube.bank_account_by_card(@card).deposit(100.pesos)
+      @bank_account.deposit(100.pesos)
 
       record_10_pesos_trip_with_final_balance(Time.new, 90.pesos)
       record_10_pesos_trip_with_final_balance(Time.new, 81.pesos)
     end
 
     it 'do not apply 10% discount past one hour after previous Trip' do
-      @sube.bank_account_by_card(@card).deposit(100.pesos)
+      @bank_account.deposit(100.pesos)
 
       record_10_pesos_trip_with_final_balance(Time.parse('2020-08-09 13:00:00'), 90.pesos)
       record_10_pesos_trip_with_final_balance(Time.parse('2020-08-09 15:00:00'), 80.pesos)
@@ -132,9 +132,9 @@ def record_10_pesos_trip(trip_start)
 end
 
 def record_10_pesos_trip_with_final_balance(trip_start, final_balance)
-  trip = Trip.new(trip_start, 10.pesos, @card)
+  record_10_pesos_trip(trip_start)
 
-  @sube.record_trip(trip)
+  bank_account = @sube.bank_account_by_card(@card)
 
-  expect(@sube.bank_account_by_card(@card).balance).to eq final_balance
+  expect(bank_account.balance).to eq final_balance
 end
