@@ -100,9 +100,9 @@ describe 'Trip record' do
     it 'due to balance below -50 tolerance' do
       @sube.bank_account_by_card(@card).withdraw(50.pesos)
 
-      expect { @sube.record_trip(Time.new, 10.pesos, @card) }.to raise_error 'Insufficient funds'
+      expect { @sube.record_trip(Trip.new(Time.new, 10.pesos, @card)) }.to raise_error 'Insufficient funds'
 
-      expect(@card.owner.trips).to be_empty
+      expect(@sube.trips_by_card(@card)).to be_empty
     end
   end
 
@@ -124,13 +124,17 @@ describe 'Trip record' do
 end
 
 def record_10_pesos_trip(trip_start)
-  @sube.record_trip(trip_start, 10.pesos, @card)
+  trip = Trip.new(trip_start, 10.pesos, @card)
 
-  expect(@card.owner.last_trip).to eq Trip.new(trip_start, 10.pesos, @card)
+  @sube.record_trip(trip)
+
+  expect(@sube.trips_by_card(@card).last).to eq trip
 end
 
 def record_10_pesos_trip_with_final_balance(trip_start, final_balance)
-  @sube.record_trip(trip_start, 10.pesos, @card)
+  trip = Trip.new(trip_start, 10.pesos, @card)
+
+  @sube.record_trip(trip)
 
   expect(@sube.bank_account_by_card(@card).balance).to eq final_balance
 end

@@ -22,6 +22,7 @@ class Sube
     @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
     @overdraft_limit = OverdraftLimit.new(-50.pesos)
     @ticket_price_calculator = TicketPriceCalculator.new([TwoTripsWithinLastHourDiscount.new])
+    @trips_by_card = Hash.new { |hsh, key| hsh[key] = [] }
   end
 
   def create_card
@@ -38,20 +39,22 @@ class Sube
   end
 
   def associate_card_to_user(card, user)
-    card.owner = user
     @user_by_dni[user.dni].add_card(card)
   end
 
-  def record_trip(date_time, ticket_price, card)
-    ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, card.owner)
+  def trips_by_card(card)
+    @trips_by_card[card]
+  end
 
-    bank_account_by_card(card).withdraw(ticket_price)
+  def record_trip(trip)
+    ticket_price = @ticket_price_calculator.apply_discounts(trip.ticket_price, @trips_by_card[trip.card])
 
-    card.owner.add_trip(Trip.new(date_time, ticket_price, card))
+    bank_account_by_card(trip.card).withdraw(ticket_price)
+
+    @trips_by_card[trip.card].push trip
   end
 end
 
-# The Bank
 class Bank
   attr_reader :account_by_card
 
@@ -70,7 +73,6 @@ class Bank
   end
 end
 
-# A money account for a User in the SUBE
 class BankAccount
   attr_reader :number
   attr_reader :balance
@@ -111,7 +113,6 @@ class BankAccountNumberGenerator
   end
 end
 
-# A plastic card used for pay trips.
 class Card
   attr_reader :number
   attr_accessor :owner
@@ -127,14 +128,6 @@ class Card
 
   def ==(other)
     @number == other.number
-  end
-
-  def add_trip(trip)
-    @owner.add_trip(trip)
-  end
-
-  def last_trip
-    @owner.last_trip
   end
 end
 
@@ -166,7 +159,6 @@ class UnregisteredUser
   end
 end
 
-# A user of SUBE
 class RegisteredUser
   attr_reader :dni
   attr_reader :name
@@ -197,7 +189,6 @@ class RegisteredUser
   end
 end
 
-# Registers a Trip
 class Trip
   attr_reader :start_time
   attr_reader :ticket_price
@@ -214,25 +205,24 @@ class Trip
   end
 end
 
-# Calculates a the total price of a Ticket.
 class TicketPriceCalculator
   def initialize(discounts)
     @discounts = discounts
   end
 
-  def apply_discounts(ticket_price, user)
+  def apply_discounts(ticket_price, trips)
     @discounts.reduce(ticket_price) do |calculated_price, discount|
-      discount.apply(calculated_price, user)
+      discount.apply(calculated_price, trips)
     end
   end
 end
 
 # Applies 10% percent discount on the price of a trip, if it starts within the first hour of the previous trip
 class TwoTripsWithinLastHourDiscount
-  def apply(ticket_price, user)
-    return ticket_price if user.trips.empty?
+  def apply(ticket_price, trips)
+    return ticket_price if trips.empty?
 
-    if (now - user.last_trip.start_time) < one_hour
+    if (now - trips.last.start_time) < one_hour
       ticket_price * 0.9
     else
       ticket_price
