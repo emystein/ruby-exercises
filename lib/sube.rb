@@ -11,6 +11,7 @@
 #      Asumiendo que hay 20 dias habiles se lo bonificará con 300 pesos.
 
 require 'money_extensions'
+require 'bank'
 
 # The Sistema Unico de Boleto Electro'nico (SUBE) system.
 class Sube
@@ -19,14 +20,12 @@ class Sube
   def initialize
     @user_by_dni = {}
     @bank = Bank.new
-    @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
-    @overdraft_limit = OverdraftLimit.new(-50.pesos)
     @ticket_price_calculator = TicketPriceCalculator.new([TwoTripsWithinLastHourDiscount.new])
     @trips_by_card = Hash.new { |hsh, key| hsh[key] = [] }
   end
 
   def create_card
-    bank_account = @bank.create_account(@credit_precondition, @overdraft_limit)
+    bank_account = @bank.create_account(SubeBankAccountConstraints.new)
     @bank.create_card(bank_account)
   end
 
@@ -46,116 +45,14 @@ class Sube
     @trips_by_card[card]
   end
 
-  def record_trip(trip)
-    ticket_price = @ticket_price_calculator.apply_discounts(trip.ticket_price, @trips_by_card[trip.card])
+  def record_trip(trip_start:, ticket_price:, card:)
+    trip = Trip.new(trip_start, ticket_price)
 
-    bank_account_by_card(trip.card).withdraw(ticket_price)
+    ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, trips_by_card(card))
 
-    @trips_by_card[trip.card].push trip
-  end
-end
+    bank_account_by_card(card).withdraw(ticket_price)
 
-class Bank
-  attr_reader :account_by_card
-
-  def initialize
-    @account_by_card = {}
-  end
-
-  def create_account(credit_precondition, overdraft_limit)
-    BankAccount.create(credit_precondition, overdraft_limit)
-  end
-
-  def create_card(money_account)
-    card = Card.create
-    @account_by_card[card] = money_account
-    card
-  end
-end
-
-class BankAccount
-  attr_reader :number
-  attr_reader :balance
-  attr_reader :credit_precondition
-  attr_reader :overdraft_limit
-
-  def self.create(credit_precondition, overdraft_limit)
-    BankAccount.new(BankAccountNumberGenerator.new.generate, credit_precondition, overdraft_limit)
-  end
-
-  def initialize(number, credit_precondition, overdraft_limit)
-    @number = number
-    @credit_precondition = credit_precondition
-    @overdraft_limit = overdraft_limit
-    @balance = 0
-  end
-
-  def deposit(amount)
-    @credit_precondition.check(amount, self)
-
-    @balance += amount
-  end
-
-  def withdraw(amount)
-    @overdraft_limit.check(amount, self)
-
-    @balance -= amount
-  end
-
-  def negative_balance?
-    @balance.negative?
-  end
-end
-
-class BankAccountNumberGenerator
-  def generate
-    rand 100_000_000_000
-  end
-end
-
-class Card
-  attr_reader :number
-  attr_accessor :owner
-
-  def self.create
-    Card.new(CreditCardNumberGenerator.new.generate)
-  end
-
-  def initialize(number)
-    @number = number
-    @owner = UnregisteredUser.new(self)
-  end
-
-  def ==(other)
-    @number == other.number
-  end
-end
-
-class CreditCardNumberGenerator
-  def generate
-    Array.new(16) { Array('0'..'9').sample }.join
-  end
-end
-
-class UnregisteredUser
-  attr_reader :card
-  attr_reader :trips
-
-  def initialize(card)
-    @card = card
-    @trips = []
-  end
-
-  def ==(other)
-    @card == other.card
-  end
-
-  def add_trip(trip)
-    @trips << trip
-  end
-
-  def last_trip
-    @trips.last
+    trips_by_card(card).push trip
   end
 end
 
@@ -189,19 +86,23 @@ class RegisteredUser
   end
 end
 
+class SubeBankAccountConstraints < BankAccountConstraints
+  def initialize
+    super(NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
+  end
+end
+
 class Trip
   attr_reader :start_time
   attr_reader :ticket_price
-  attr_reader :card
 
-  def initialize(start_time, ticket_price, card)
+  def initialize(start_time, ticket_price)
     @start_time = start_time
     @ticket_price = ticket_price
-    @card = card
   end
 
   def ==(other)
-    @start_time == other.start_time && @ticket_price == other.ticket_price && @card == other.card
+    @start_time == other.start_time && @ticket_price == other.ticket_price
   end
 end
 
@@ -235,25 +136,5 @@ class TwoTripsWithinLastHourDiscount
 
   def one_hour
     60 * 60
-  end
-end
-
-class NegativeBalanceMinimumCredit
-  def initialize(minimum_credit)
-    @minimum_credit = minimum_credit
-  end
-
-  def check(amount_to_deposit, target_account)
-    raise 'Minimum credit must be 50 pesos' if target_account.negative_balance? && amount_to_deposit < @minimum_credit
-  end
-end
-
-class OverdraftLimit
-  def initialize(limit)
-    @limit = limit
-  end
-
-  def check(amount_to_debit, account)
-    raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
   end
 end

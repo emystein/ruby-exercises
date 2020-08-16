@@ -4,45 +4,33 @@ require 'time'
 
 describe 'BankAccount' do
   before(:each) do
-    @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
-    @overdraft_limit = OverdraftLimit.new(-50.pesos)
+    @account = BankAccount.new(1, SubeBankAccountConstraints.new)
   end
 
   it 'starts with no balance' do
-    expect(BankAccount.new(1, @credit_precondition, @overdraft_limit).balance).to eq 0
-  end
-end
-
-describe 'BankAccount credit' do
-  before(:each) do
-    @credit_precondition = NegativeBalanceMinimumCredit.new(50.pesos)
-    @overdraft_limit = OverdraftLimit.new(-50.pesos)
+    expect(@account.balance).to eq 0
   end
 
   it 'no minimum when current balance are positive' do
-    account = BankAccount.new(1, @credit_precondition, @overdraft_limit)
+    @account.deposit(10.pesos)
 
-    account.deposit(10.pesos)
-
-    expect(account.balance).to eq 10.pesos
+    expect(@account.balance).to eq 10.pesos
   end
 
   it 'reject less than 50 pesos credit when current balance are negative' do
-    account = BankAccount.new(1, @credit_precondition, @overdraft_limit)
+    @account.withdraw(10.pesos)
 
-    account.withdraw(10.pesos)
+    expect { @account.deposit(20.pesos) }.to raise_error 'Minimum credit must be 50.00'
 
-    expect { account.deposit(20.pesos) }.to raise_error 'Minimum credit must be 50 pesos'
-    expect(account.balance).to eq(-10.pesos)
+    expect(@account.balance).to eq(-10.pesos)
   end
 
   it 'accept more than 50 pesos credit when current balance are negative' do
-    account = BankAccount.new(1, @credit_precondition, @overdraft_limit)
+    @account.withdraw(10.pesos)
 
-    account.withdraw(10.pesos)
-    account.deposit(60.pesos)
+    @account.deposit(60.pesos)
 
-    expect(account.balance).to eq 50.pesos
+    expect(@account.balance).to eq 50.pesos
   end
 end
 
@@ -100,7 +88,7 @@ describe 'Trip record' do
     it 'due to balance below -50 tolerance' do
       @bank_account.withdraw(50.pesos)
 
-      expect { @sube.record_trip(Trip.new(Time.new, 10.pesos, @card)) }.to raise_error 'Insufficient funds'
+      expect { @sube.record_trip(trip_start: Time.new, ticket_price: 10.pesos, card: @card) }.to raise_error 'Insufficient funds'
 
       expect(@sube.trips_by_card(@card)).to be_empty
     end
@@ -124,11 +112,9 @@ describe 'Trip record' do
 end
 
 def record_10_pesos_trip(trip_start)
-  trip = Trip.new(trip_start, 10.pesos, @card)
+  @sube.record_trip(trip_start: trip_start, ticket_price: 10.pesos, card: @card)
 
-  @sube.record_trip(trip)
-
-  expect(@sube.trips_by_card(@card).last).to eq trip
+  expect(@sube.trips_by_card(@card).last).to eq Trip.new(trip_start, 10.pesos)
 end
 
 def record_10_pesos_trip_with_final_balance(trip_start, final_balance)
