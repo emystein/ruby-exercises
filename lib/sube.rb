@@ -30,7 +30,7 @@ class Sube
   end
 
   def register_user(dni:, name:)
-    @user_by_dni[dni] = RegisteredUser.new(dni, name)
+    @user_by_dni[dni] = RegisteredUser.new(dni: dni, name: name)
   end
 
   def associate_card_to_user(card, user)
@@ -56,7 +56,7 @@ class RegisteredUser
   attr_reader :cards
   attr_reader :trips
 
-  def initialize(dni, name)
+  def initialize(dni:, name:)
     @dni = dni
     @name = name
     @cards = []
