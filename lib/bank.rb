@@ -4,20 +4,12 @@ require 'money_extensions'
 Money.locale_backend = nil
 
 class Bank
-  attr_reader :account_by_card
-
-  def initialize
-    @account_by_card = {}
-  end
-
   def create_account(constraints)
     BankAccount.create(constraints)
   end
 
   def create_card(money_account)
-    card = Card.create
-    @account_by_card[card] = money_account
-    card
+    Card.create(money_account)
   end
 end
 
@@ -73,13 +65,15 @@ end
 
 class Card
   attr_reader :number
+  attr_reader :bank_account
 
-  def self.create
-    Card.new(CreditCardNumberGenerator.new.generate)
+  def self.create(bank_account)
+    Card.new(CreditCardNumberGenerator.new.generate, bank_account)
   end
 
-  def initialize(number)
+  def initialize(number, bank_account)
     @number = number
+    @bank_account = bank_account
   end
 
   def ==(other)

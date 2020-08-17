@@ -67,7 +67,7 @@ describe 'Trip record' do
   before(:each) do
     @sube = Sube.new
     @card = @sube.create_card
-    @bank_account = @sube.bank_account_by_card(@card)
+    @bank_account = @card.bank_account
   end
 
   describe 'Accept Trip' do
@@ -98,15 +98,15 @@ describe 'Trip record' do
     it 'apply 10% discount within one hour after previous Trip' do
       @bank_account.deposit(100.pesos)
 
-      record_10_pesos_trip_with_final_balance(Time.new, 90.pesos)
-      record_10_pesos_trip_with_final_balance(Time.new, 81.pesos)
+      record_10_pesos_trip_expect_balance(Time.new, 90.pesos)
+      record_10_pesos_trip_expect_balance(Time.new, 81.pesos)
     end
 
     it 'do not apply 10% discount past one hour after previous Trip' do
       @bank_account.deposit(100.pesos)
 
-      record_10_pesos_trip_with_final_balance(Time.parse('2020-08-09 13:00:00'), 90.pesos)
-      record_10_pesos_trip_with_final_balance(Time.parse('2020-08-09 15:00:00'), 80.pesos)
+      record_10_pesos_trip_expect_balance(Time.parse('2020-08-09 13:00:00'), 90.pesos)
+      record_10_pesos_trip_expect_balance(Time.parse('2020-08-09 15:00:00'), 80.pesos)
     end
   end
 end
@@ -117,10 +117,8 @@ def record_10_pesos_trip(trip_start)
   expect(@sube.trips_by_card(@card).last).to eq Trip.new(trip_start, 10.pesos)
 end
 
-def record_10_pesos_trip_with_final_balance(trip_start, final_balance)
+def record_10_pesos_trip_expect_balance(trip_start, final_balance)
   record_10_pesos_trip(trip_start)
 
-  bank_account = @sube.bank_account_by_card(@card)
-
-  expect(bank_account.balance).to eq final_balance
+  expect(@card.bank_account.balance).to eq final_balance
 end

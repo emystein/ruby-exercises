@@ -29,10 +29,6 @@ class Sube
     @bank.create_card(bank_account)
   end
 
-  def bank_account_by_card(card)
-    @bank.account_by_card[card]
-  end
-
   def register_user(dni:, name:)
     @user_by_dni[dni] = RegisteredUser.new(dni, name)
   end
@@ -50,7 +46,7 @@ class Sube
 
     ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, trips_by_card(card))
 
-    bank_account_by_card(card).withdraw(ticket_price)
+    card.bank_account.withdraw(ticket_price)
 
     trips_by_card(card).push trip
   end
