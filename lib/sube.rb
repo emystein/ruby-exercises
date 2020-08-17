@@ -41,14 +41,12 @@ class Sube
     @trips_by_card[card]
   end
 
-  def record_trip(trip_start:, ticket_price:, card:)
-    trip = Trip.new(trip_start, ticket_price)
+  def record_trip(start_time:, ticket_price:, card:)
+    final_price = @ticket_price_calculator.apply_discounts(ticket_price, trips_by_card(card))
 
-    ticket_price = @ticket_price_calculator.apply_discounts(ticket_price, trips_by_card(card))
+    card.bank_account.withdraw(final_price)
 
-    card.bank_account.withdraw(ticket_price)
-
-    trips_by_card(card).push trip
+    trips_by_card(card).push Trip.new(start_time: start_time, ticket_price: ticket_price)
   end
 end
 
@@ -92,7 +90,7 @@ class Trip
   attr_reader :start_time
   attr_reader :ticket_price
 
-  def initialize(start_time, ticket_price)
+  def initialize(start_time:, ticket_price:)
     @start_time = start_time
     @ticket_price = ticket_price
   end

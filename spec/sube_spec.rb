@@ -34,43 +34,24 @@ describe 'BankAccount' do
   end
 end
 
-describe 'Registered User' do
-  before(:each) do
-    @bank = Bank.new
-    @user = RegisteredUser.new(dni = 26_427_162, name = 'Emiliano Menéndez')
-  end
-
-  it 'add a Card' do
-    card = @bank.create_card(@money_account)
-
-    @user.add_card(card)
-
-    expect(@user.cards).to eq [card]
-  end
-end
-
 describe 'Sube' do
-  it 'register a new User and associate a Card' do
-    sube = Sube.new
-
-    card = sube.create_card
-
-    user = sube.register_user(dni: 26_427_162, name: 'Emiliano Menéndez')
-
-    sube.associate_card_to_user(card, user)
-
-    expect(user.cards).to include card
-  end
-end
-
-describe 'Trip record' do
   before(:each) do
     @sube = Sube.new
     @card = @sube.create_card
     @bank_account = @card.bank_account
   end
 
-  describe 'Accept Trip' do
+  it 'register a new User and associate a Card' do
+    card = @sube.create_card
+
+    user = @sube.register_user(dni: 26_427_162, name: 'Emiliano Menéndez')
+
+    @sube.associate_card_to_user(card, user)
+
+    expect(user.cards).to include card
+  end
+
+  describe 'Record Trip' do
     it 'use positive balance' do
       @bank_account.deposit(10.pesos)
 
@@ -88,7 +69,7 @@ describe 'Trip record' do
     it 'due to balance below -50 tolerance' do
       @bank_account.withdraw(50.pesos)
 
-      expect { @sube.record_trip(trip_start: Time.new, ticket_price: 10.pesos, card: @card) }.to raise_error 'Insufficient funds'
+      expect { @sube.record_trip(start_time: Time.new, ticket_price: 10.pesos, card: @card) }.to raise_error 'Insufficient funds'
 
       expect(@sube.trips_by_card(@card)).to be_empty
     end
@@ -109,16 +90,16 @@ describe 'Trip record' do
       record_10_pesos_trip_expect_balance(Time.parse('2020-08-09 15:00:00'), 80.pesos)
     end
   end
-end
 
-def record_10_pesos_trip(trip_start)
-  @sube.record_trip(trip_start: trip_start, ticket_price: 10.pesos, card: @card)
+  def record_10_pesos_trip(start_time)
+    @sube.record_trip(start_time: start_time, ticket_price: 10.pesos, card: @card)
 
-  expect(@sube.trips_by_card(@card).last).to eq Trip.new(trip_start, 10.pesos)
-end
+    expect(@sube.trips_by_card(@card).last).to eq Trip.new(start_time: start_time, ticket_price: 10.pesos)
+  end
 
-def record_10_pesos_trip_expect_balance(trip_start, final_balance)
-  record_10_pesos_trip(trip_start)
+  def record_10_pesos_trip_expect_balance(start_time, final_balance)
+    record_10_pesos_trip(start_time)
 
-  expect(@card.bank_account.balance).to eq final_balance
+    expect(@card.bank_account.balance).to eq final_balance
+  end
 end
