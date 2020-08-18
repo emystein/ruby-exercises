@@ -4,7 +4,7 @@ require 'time'
 
 describe 'BankAccount' do
   before(:each) do
-    @account = BankAccount.new(1, SubeBankAccountConstraints.new)
+    @account = BankAccount.create('Unregistered user', SubeBankAccountConstraints.new)
   end
 
   it 'starts with no balance' do
@@ -55,13 +55,13 @@ describe 'Sube' do
     it 'use positive balance' do
       @bank_account.deposit(10.pesos)
 
-      record_10_pesos_trip(Time.new)
+      record_trip(start_time: Time.new, ticket_price: 10.pesos)
     end
 
     it 'use negative balance within -50 tolerance' do
       @bank_account.withdraw(20.pesos)
 
-      record_10_pesos_trip(Time.new)
+      record_trip(start_time: Time.new, ticket_price: 10.pesos)
     end
   end
 
@@ -79,27 +79,27 @@ describe 'Sube' do
     it 'apply 10% discount within one hour after previous Trip' do
       @bank_account.deposit(100.pesos)
 
-      record_10_pesos_trip_expect_balance(Time.new, 90.pesos)
-      record_10_pesos_trip_expect_balance(Time.new, 81.pesos)
+      record_trip_expect_balance(start_time: Time.new, ticket_price: 10.pesos, balance: 90.pesos)
+      record_trip_expect_balance(start_time: Time.new, ticket_price: 10.pesos, balance: 81.pesos)
     end
 
     it 'do not apply 10% discount past one hour after previous Trip' do
       @bank_account.deposit(100.pesos)
 
-      record_10_pesos_trip_expect_balance(Time.parse('2020-08-09 13:00:00'), 90.pesos)
-      record_10_pesos_trip_expect_balance(Time.parse('2020-08-09 15:00:00'), 80.pesos)
+      record_trip_expect_balance(start_time: Time.parse('2020-08-09 13:00:00'), ticket_price: 10.pesos, balance: 90.pesos)
+      record_trip_expect_balance(start_time: Time.parse('2020-08-09 15:00:00'), ticket_price: 10.pesos, balance: 80.pesos)
     end
   end
 
-  def record_10_pesos_trip(start_time)
-    @sube.record_trip(start_time: start_time, ticket_price: 10.pesos, card: @card)
+  def record_trip(start_time:, ticket_price:)
+    @sube.record_trip(start_time: start_time, ticket_price: ticket_price, card: @card)
 
-    expect(@sube.trips_by_card(@card).last).to eq Trip.new(start_time: start_time, ticket_price: 10.pesos)
+    expect(@sube.trips_by_card(@card).last).to eq Trip.new(start_time: start_time, ticket_price: ticket_price)
   end
 
-  def record_10_pesos_trip_expect_balance(start_time, final_balance)
-    record_10_pesos_trip(start_time)
+  def record_trip_expect_balance(start_time:, ticket_price:, balance:)
+    record_trip(start_time: start_time, ticket_price: ticket_price)
 
-    expect(@card.bank_account.balance).to eq final_balance
+    expect(@card.bank_account.balance).to eq balance
   end
 end

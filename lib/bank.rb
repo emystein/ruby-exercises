@@ -4,8 +4,8 @@ require 'money_extensions'
 Money.locale_backend = nil
 
 class Bank
-  def create_account(constraints)
-    BankAccount.create(constraints)
+  def create_account(owner:, constraints:)
+    BankAccount.create(owner, constraints)
   end
 
   def create_card(money_account)
@@ -15,16 +15,18 @@ end
 
 class BankAccount
   attr_reader :number
+  attr_reader :owner
   attr_reader :balance
   attr_reader :credit_precondition
   attr_reader :overdraft_limit
 
-  def self.create(constraints)
-    BankAccount.new(BankAccountNumberGenerator.new.generate, constraints)
+  def self.create(owner, constraints)
+    BankAccount.new(BankAccountNumberGenerator.new.generate, owner, constraints)
   end
 
-  def initialize(number, constraints)
+  def initialize(number, owner, constraints)
     @number = number
+    @owner = owner
     @credit_precondition = constraints.credit_precondition
     @overdraft_limit = constraints.overdraft_limit
     @balance = 0
@@ -63,6 +65,12 @@ class BankAccountConstraints
   end
 end
 
+class NoConstraints < BankAccountConstraints
+  def initialize
+    super(PassDepositPrecondition.new, NoOverdraftLimit.new)
+  end
+end
+
 class Card
   attr_reader :number
   attr_reader :bank_account
@@ -87,6 +95,7 @@ class CreditCardNumberGenerator
   end
 end
 
+# Deposit precondition expecting minimum credit if balance is negative and below a threshold.
 class NegativeBalanceMinimumCredit
   def initialize(minimum_credit)
     @minimum_credit = minimum_credit
@@ -97,6 +106,13 @@ class NegativeBalanceMinimumCredit
   end
 end
 
+class PassDepositPrecondition
+  def check(amount_to_deposit, target_account)
+    # pass
+  end
+end
+
+
 class OverdraftLimit
   def initialize(limit)
     @limit = limit
@@ -104,5 +120,11 @@ class OverdraftLimit
 
   def check(amount_to_debit, account)
     raise 'Insufficient funds' if (account.balance - amount_to_debit) < @limit
+  end
+end
+
+class NoOverdraftLimit
+  def check(amount_to_debit, account)
+    # pass
   end
 end

@@ -25,7 +25,7 @@ class Sube
   end
 
   def create_card
-    bank_account = @bank.create_account(SubeBankAccountConstraints.new)
+    bank_account = @bank.create_account(owner: 'Unregistered user', constraints: SubeBankAccountConstraints.new)
     @bank.create_card(bank_account)
   end
 
