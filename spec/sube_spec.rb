@@ -4,7 +4,10 @@ require 'time'
 
 describe 'BankAccount' do
   before(:each) do
-    @account = BankAccount.create('Unregistered user', SubeBankAccountConstraints.new)
+    @account = BankAccount.new(number: BankAccountNumberGenerator.generate,
+                               owner: 'Unregistered user',
+                               credit_precondition: NegativeBalanceMinimumCredit.new(50.pesos),
+                               overdraft_limit: OverdraftLimit.new(-50.pesos))
   end
 
   it 'starts with no balance' do

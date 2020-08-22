@@ -7,7 +7,9 @@ describe 'Bank' do
 
   describe 'BankAccount' do
     it 'has an owner' do
-      account = @bank.create_account(owner: 'John Doe', constraints: NoConstraints.new)
+      account = @bank.create_account(owner: 'John Doe',
+                                     credit_precondition: PassDepositPrecondition.new,
+                                     overdraft_limit: NoOverdraftLimit.new)
 
       expect(account.owner).to eq 'John Doe'
     end

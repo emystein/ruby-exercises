@@ -25,7 +25,9 @@ class Sube
   end
 
   def create_card
-    bank_account = @bank.create_account(owner: 'Unregistered user', constraints: SubeBankAccountConstraints.new)
+    bank_account = @bank.create_account(owner: 'Unregistered user',
+                                        credit_precondition: NegativeBalanceMinimumCredit.new(50.pesos),
+                                        overdraft_limit: OverdraftLimit.new(-50.pesos))
     @bank.create_card(bank_account)
   end
 
@@ -77,12 +79,6 @@ class RegisteredUser
 
   def last_trip
     @trips.last
-  end
-end
-
-class SubeBankAccountConstraints < BankAccountConstraints
-  def initialize
-    super(NegativeBalanceMinimumCredit.new(50.pesos), OverdraftLimit.new(-50.pesos))
   end
 end
 

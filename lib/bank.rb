@@ -4,12 +4,15 @@ require 'money_extensions'
 Money.locale_backend = nil
 
 class Bank
-  def create_account(owner:, constraints:)
-    BankAccount.create(owner, constraints)
+  def create_account(owner:, credit_precondition:, overdraft_limit:)
+    BankAccount.new(number: BankAccountNumberGenerator.generate,
+                    owner: owner,
+                    credit_precondition: credit_precondition,
+                    overdraft_limit: overdraft_limit)
   end
 
-  def create_card(money_account)
-    Card.create(money_account)
+  def create_card(bank_account)
+    Card.new(number: CreditCardNumberGenerator.generate, bank_account: bank_account)
   end
 end
 
@@ -20,15 +23,11 @@ class BankAccount
   attr_reader :credit_precondition
   attr_reader :overdraft_limit
 
-  def self.create(owner, constraints)
-    BankAccount.new(BankAccountNumberGenerator.new.generate, owner, constraints)
-  end
-
-  def initialize(number, owner, constraints)
+  def initialize(number:, owner:, credit_precondition:, overdraft_limit:)
     @number = number
     @owner = owner
-    @credit_precondition = constraints.credit_precondition
-    @overdraft_limit = constraints.overdraft_limit
+    @credit_precondition = credit_precondition
+    @overdraft_limit = overdraft_limit
     @balance = 0
   end
 
@@ -50,24 +49,8 @@ class BankAccount
 end
 
 class BankAccountNumberGenerator
-  def generate
+  def self.generate
     rand 100_000_000_000
-  end
-end
-
-class BankAccountConstraints
-  attr_reader :credit_precondition
-  attr_reader :overdraft_limit
-
-  def initialize(credit_precondition, overdraft_limit)
-    @credit_precondition = credit_precondition
-    @overdraft_limit = overdraft_limit
-  end
-end
-
-class NoConstraints < BankAccountConstraints
-  def initialize
-    super(PassDepositPrecondition.new, NoOverdraftLimit.new)
   end
 end
 
@@ -75,11 +58,7 @@ class Card
   attr_reader :number
   attr_reader :bank_account
 
-  def self.create(bank_account)
-    Card.new(CreditCardNumberGenerator.new.generate, bank_account)
-  end
-
-  def initialize(number, bank_account)
+  def initialize(number:, bank_account:)
     @number = number
     @bank_account = bank_account
   end
@@ -90,7 +69,7 @@ class Card
 end
 
 class CreditCardNumberGenerator
-  def generate
+  def self.generate
     Array.new(16) { Array('0'..'9').sample }.join
   end
 end
