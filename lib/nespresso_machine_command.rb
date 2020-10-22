@@ -1,4 +1,4 @@
-class CoffeeMachine
+class CoffeeMachineCommands
   attr_reader :capsule
 
   def initialize
