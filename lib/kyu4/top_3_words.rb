@@ -8,26 +8,15 @@ class WordCount
 
   def initialize(text)
     words = text.split(' ').map { |characters| Word.new(characters) }.filter(&:not_empty?)
-    @by_word = Hash.new(0)
-    words.each { |word| @by_word[word.to_s] += 1 }
+    @by_word = words.group_by(&:to_s).transform_values(&:size)
   end
 
   def sorted
-    first_value_from_pairs(sorted_by_value(@by_word))
+    @by_word.sort_by { |_, v| v }.map { |k, _| k }
   end
 
   def top(count)
     sorted.reverse.first(count)
-  end
-
-  private
-
-  def first_value_from_pairs(pairs)
-    pairs.map { |pair| pair[0] }
-  end
-
-  def sorted_by_value(hash)
-    hash.sort { |a, b| a[1] <=> b[1] }
   end
 end
 
