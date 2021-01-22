@@ -1,59 +1,74 @@
-class SquareMatrix
-  attr_reader :square_matrix
+require 'forwardable'
 
-  def initialize(square_matrix)
-    @square_matrix = square_matrix
-    @dimensions = Dimensions.new(square_matrix.length, square_matrix.length)
+class SquareMatrix
+  include Enumerable
+  extend Forwardable # provides def_delegators
+
+  attr_reader :rows
+
+  def_delegators :rows, :each
+
+  def initialize(rows)
+    @rows = rows
+    @dimensions = Dimensions.new(@rows.length, @rows.length)
+    @max_row_index = @rows.length - 1
+    @first_row = @rows[0] || []
+    @max_column_index = @first_row.length - 1
   end
 
   def snail_sorted
     if @dimensions == Dimensions.new(0, 0)
       []
     elsif @dimensions == Dimensions.new(1, 1)
-      @square_matrix[0]
+      @rows[0]
     else
       first_row +
-        middle_right_column +
+        middle_last_column +
         last_row.reverse +
         middle_first_column.reverse +
-        reduced.snail_sorted
+        without_borders.snail_sorted
     end
   end
 
   def first_row
-    @square_matrix[0]
+    @rows[0] || []
   end
 
-  def middle_right_column
-    @square_matrix[1, @square_matrix.length - 2].map { |e| e[@square_matrix.length - 1] }
+  def first_column
+    @rows.map { |row| row[0] }
   end
 
   def last_row
-    @square_matrix[@square_matrix.length - 1]
+    @rows[@max_row_index] || []
+  end
+
+  def last_column
+    @rows.map { |row| row[@max_column_index] }
+  end
+
+  def without_borders
+    without_horizontal_borders.without_vertical_borders
+  end
+
+  def without_horizontal_borders
+    SquareMatrix.new(@rows[1, @rows.length - 2] || [])
+  end
+
+  def without_vertical_borders
+    rows = @rows.map { |row| row[1, @max_column_index - 1] }
+    SquareMatrix.new(rows)
   end
 
   def middle_first_column
-    @square_matrix[1, @square_matrix.length - 2].map { |e| e[0] }
+    without_horizontal_borders.first_column
   end
 
-  def reduced
-    SquareMatrix.new(narrow_horizontal(narrow_vertical(@square_matrix)))
-  end
-
-  def narrow_horizontal(a_matrix)
-    original_length = a_matrix.length
-    new_length = original_length - 1
-    a_matrix[1, new_length - 1]
-  end
-
-  def narrow_vertical(a_matrix)
-    original_length = a_matrix.length
-    new_length = original_length - 1
-    a_matrix.map { |e| e[1, new_length - 1] }
+  def middle_last_column
+    without_horizontal_borders.last_column
   end
 
   def ==(other)
-    @square_matrix == other.square_matrix
+    @rows == other.rows
   end
 end
 
