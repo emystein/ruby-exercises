@@ -43,6 +43,7 @@ class Matrix
     @rows.flatten
   end
 
+  # TODO: model vertical slices
   def columns_before(column_number)
     column_number > 1 ? @rows.map { |row| row[0..column_number - 2] } : []
   end
