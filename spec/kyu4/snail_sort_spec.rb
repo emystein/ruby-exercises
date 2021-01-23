@@ -1,80 +1,118 @@
 require 'kyu4/snail_sort'
 require 'rspec-parameterized'
 
-describe 'SquareMatrix.snail_sorted' do
-  it 'snail snort empty' do
-    matrix = SquareMatrix.new([[]])
-
-    expect(matrix.snail_sorted).to eq([])
+describe 'SnailClockwiseTraversal' do
+  where(:seed, :expected) do
+    [
+      [[[]], []],
+      [[[1]], [1]],
+      [[[1, 2], [3, 4]], [1, 2, 4, 3]],
+      [[[1, 2], [3, 4], [5, 6]], [1, 2, 4, 6, 5, 3]],
+      [[[1, 2, 3], [4, 5, 6]], [1, 2, 3, 6, 5, 4]],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], [1, 2, 3, 6, 9, 8, 7, 4, 5]],
+      [[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]], [1, 2, 3, 4, 8, 12, 16, 15, 14, 13, 9, 5, 6, 7, 11, 10]]
+    ]
   end
-  it 'snail snort 1 x 1 matrix' do
-    matrix = SquareMatrix.new([[1]])
 
-    expect(matrix.snail_sorted).to eq([1])
-  end
-  it 'snail snort 2 x 2 matrix' do
-    matrix = SquareMatrix.new([[1, 2], [3, 4]])
+  with_them do
+    it 'snail sort' do
+      traversal = SnailClockwiseTraversal.new
 
-    expect(matrix.snail_sorted).to eq([1, 2, 4, 3])
-  end
-  it 'snail snort 3 x 3 matrix' do
-    matrix = SquareMatrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+      matrix = Matrix.new(seed)
 
-    expect(matrix.snail_sorted).to eq([1, 2, 3, 6, 9, 8, 7, 4, 5])
-  end
-  it 'snail snort 4 x 4 matrix' do
-    matrix = SquareMatrix.new([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
-
-    expect(matrix.snail_sorted).to eq([1, 2, 3, 4, 8, 12, 16, 15, 14, 13, 9, 5, 6, 7, 11, 10])
+      expect(traversal.traverse(matrix)).to eq(expected)
+    end
   end
 end
 
-describe 'SquareMatrix rows and columns' do
-  where(:seed, :first_row, :last_row, :middle_first_column, :middle_last_column) do
+describe 'Matrix rows and columns' do
+  where(:seed, :first_row, :last_row) do
     [
-      [[], [], [], [], []],
-      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], [1, 2, 3], [7, 8, 9], [4], [6]]
+      [[], [], []],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], [1, 2, 3], [7, 8, 9]]
     ]
   end
 
   with_them do
     it 'first row' do
-      matrix = SquareMatrix.new(seed)
+      matrix = Matrix.new(seed)
 
       expect(matrix.first_row).to eq(first_row)
     end
     it 'last row' do
-      matrix = SquareMatrix.new(seed)
+      matrix = Matrix.new(seed)
 
       expect(matrix.last_row).to eq(last_row)
     end
-    it 'middle first column' do
-      matrix = SquareMatrix.new(seed)
-
-      expect(matrix.middle_first_column).to eq(middle_first_column)
-    end
-    it 'middle last column' do
-      matrix = SquareMatrix.new(seed)
-
-      expect(matrix.middle_last_column).to eq(middle_last_column)
-    end
-    it 'without horizontal borders' do
-      matrix = SquareMatrix.new(seed)
+    it 'remove horizontal borders' do
+      matrix = Matrix.new(seed)
       expected = seed[1, seed.length - 2] || []
-      expect(matrix.without_horizontal_borders).to eq(SquareMatrix.new(expected))
+      expect(RemoveHorizontalBorders.new.transform(matrix)).to eq(Matrix.new(expected))
     end
-    it 'without vertical borders' do
-      matrix = SquareMatrix.new(seed)
+    it 'remove vertical borders' do
+      matrix = Matrix.new(seed)
       expected = seed.map { |row| row[1, seed.length - 2] }
-      expect(matrix.without_vertical_borders).to eq(SquareMatrix.new(expected))
+      expect(RemoveVerticalBorders.new.transform(matrix)).to eq(Matrix.new(expected))
     end
   end
 end
 
-describe 'SquareMatrix.reduced' do
+describe 'Matrix reduce' do
   it 'reduce 3 x 3 matrix to 1 x 1 matrix' do
-    matrix = SquareMatrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.without_borders).to eq(SquareMatrix.new([[5]]))
+    expect(RemoveBorders.new.transform(matrix)).to eq(Matrix.new([[5]]))
+  end
+
+  it 'columns before first column' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    expect(matrix.columns_before(1)).to eq([])
+  end
+  it 'columns before second column' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    expect(matrix.columns_before(2)).to eq([[1], [4], [7]])
+  end
+  it 'columns before last column' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    expect(matrix.columns_before(matrix.last_column_number)).to eq([[1, 2], [4, 5], [7, 8]])
+  end
+
+  it 'columns after first column' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    expect(matrix.columns_after(1)).to eq([[2, 3], [5, 6], [8, 9]])
+  end
+  it 'columns after second column' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    expect(matrix.columns_after(2)).to eq([[3], [6], [9]])
+  end
+  it 'columns after last column' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    expect(matrix.columns_after(matrix.last_column_number)).to eq([])
+  end
+end
+
+describe 'Remove Column' do
+  matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+  it 'first' do
+    remove_column1 = RemoveColumnNumbered.new(1)
+
+    expect(matrix.transform(remove_column1)).to eq(Matrix.new([]))
+  end
+  it 'second' do
+    remove_column2 = RemoveColumnNumbered.new(2)
+
+    expect(matrix.transform(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
+  end
+  it 'last' do
+    remove_last_column = RemoveColumnNumbered.new(matrix.last_column_number)
+
+    expect(matrix.transform(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
   end
 end
