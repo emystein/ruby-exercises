@@ -4,57 +4,39 @@ class Matrix
   include Enumerable
   extend Forwardable # provides def_delegators
 
-  attr_reader :rows, :dimensions, :max_row_index, :max_column_index, :first_column_number, :last_column_number
+  attr_reader :dimensions, :max_row_index, :max_column_index,
+              :first_column_number, :last_column_number,
+              :top_left, :top_right, :bottom_left, :bottom_right,
+              :first_row, :first_column, :last_row, :last_column
 
   def_delegators :rows, :each
 
   def initialize(rows)
     @rows = rows
+
     @dimensions = RectangularDimensions.new(@rows.length, @rows.length)
-    @max_row_index = @rows.length - 1
+
     @first_row = @rows[0] || []
+    @first_column = @rows.map { |row| row[0] }
+    @max_row_index = @rows.length - 1
+    @last_row = @rows[@max_row_index] || []
     @max_column_index = @first_row.length - 1
+    @last_column = @rows.map { |row| row[@max_column_index] }
+
     @last_column_number = @first_row.length
+
+    @top_left = Coordinates.new(0, 0)
+    @top_right = Coordinates.new(0, @max_column_index)
+    @bottom_left = Coordinates.new(@max_row_index, 0)
+    @bottom_right = Coordinates.new(@max_row_index, @max_column_index)
   end
 
   def ==(other)
-    @rows == other.rows
+    flatten == other.flatten
   end
 
   def area_less_than_or_equal?(rows, columns)
     @dimensions <= RectangularDimensions.new(rows, columns)
-  end
-
-  def first_row
-    @rows[0] || []
-  end
-
-  def first_column
-    @rows.map { |row| row[0] }
-  end
-
-  def last_row
-    @rows[@max_row_index] || []
-  end
-
-  def top_left
-    Coordinates.new(0, 0)
-  end
-
-  def top_right
-    Coordinates.new(0, @max_column_index)
-  end
-
-  def bottom_left
-    Coordinates.new(@max_row_index, 0)
-  end
-
-  def bottom_right
-    Coordinates.new(@max_row_index, @max_column_index)
-  end
-
-  def last_column
-    @rows.map { |row| row[@max_column_index] }
   end
 
   def flatten
@@ -71,6 +53,17 @@ class Matrix
 
   def transform(transformation_to_apply)
     transformation_to_apply.transform(self)
+  end
+
+  # TODO: generalize remove_*_borders (watch out breaking encapsulation of @rows)
+  def remove_horizontal_borders
+    rows = @rows[1, @rows.length - 2] || []
+    Matrix.new(rows)
+  end
+
+  def remove_vertical_borders
+    rows = @rows.map { |row| row[1, @max_column_index - 1] }
+    Matrix.new(rows)
   end
 
   def traverse_with(method_of_traversal)
@@ -120,7 +113,7 @@ class RectangularDimensions
   end
 end
 
-class RowTraversal
+class LeftRightTopDownTraversal
   def traverse(matrix)
     matrix.flatten
   end
@@ -129,7 +122,7 @@ end
 class SnailClockwiseTraversal
   def traverse(matrix)
     if matrix.area_less_than_or_equal?(1, 1)
-      matrix.traverse_with(RowTraversal.new)
+      matrix.traverse_with(LeftRightTopDownTraversal.new)
     else
       horizontally_reduced = matrix.transform(RemoveHorizontalBorders.new)
 
@@ -152,15 +145,13 @@ end
 
 class RemoveHorizontalBorders
   def transform(matrix)
-    rows = matrix.rows[1, matrix.rows.length - 2] || []
-    Matrix.new(rows)
+    matrix.remove_horizontal_borders
   end
 end
 
 class RemoveVerticalBorders
   def transform(matrix)
-    rows = matrix.rows.map { |row| row[1, matrix.max_column_index - 1] }
-    Matrix.new(rows)
+    matrix.remove_vertical_borders
   end
 end
 
