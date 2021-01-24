@@ -60,7 +60,7 @@ describe 'Matrix rows and columns' do
     it 'columns left to the last column' do
       matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-      expect(matrix.columns_left_to(matrix.last_column_number)).to eq([[1, 2], [4, 5], [7, 8]])
+      expect(matrix.columns_left_to(matrix.column_count)).to eq([[1, 2], [4, 5], [7, 8]])
     end
   end
 
@@ -78,7 +78,7 @@ describe 'Matrix rows and columns' do
     it 'columns right to the last column' do
       matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-      expect(matrix.columns_right_to(matrix.last_column_number)).to eq([])
+      expect(matrix.columns_right_to(matrix.column_count)).to eq([])
     end
   end
 
@@ -198,7 +198,7 @@ describe 'Matrix reduce' do
       expect(matrix.transform_using(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
     end
     it 'last' do
-      remove_last_column = RemoveColumnNumbered.new(matrix.last_column_number)
+      remove_last_column = RemoveColumnNumbered.new(matrix.column_count)
 
       expect(matrix.transform_using(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
     end

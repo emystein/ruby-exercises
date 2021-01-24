@@ -4,31 +4,23 @@ class Matrix
   include Enumerable
   extend Forwardable # provides def_delegators
 
-  attr_reader :dimensions, :row_count, :first_column_number, :last_column_number,
-              :top_left, :top_right, :bottom_left, :bottom_right,
+  attr_reader :dimensions, :row_count, :column_count,
               :first_row, :first_column, :last_row, :last_column
 
   def_delegators :rows, :each
 
   def initialize(rows)
     @rows = rows
-    @row_count = @rows.length
-
-    @dimensions = RectangularDimensions.new(@rows.length, @rows.length)
 
     @first_row = @rows[0] || []
     @first_column = @rows.map { |row| row[0] }
-    @max_row_index = @rows.length - 1
-    @last_row = @rows[@max_row_index] || []
-    @max_column_index = @first_row.length - 1
-    @last_column = @rows.map { |row| row[@max_column_index] }
 
-    @last_column_number = @first_row.length
+    @row_count = @rows.length
+    @column_count = @first_row.length
+    @dimensions = RectangularDimensions.new(@row_count, @column_count)
 
-    @top_left = Coordinates.new(0, 0)
-    @top_right = Coordinates.new(0, @max_column_index)
-    @bottom_left = Coordinates.new(@max_row_index, 0)
-    @bottom_right = Coordinates.new(@max_row_index, @max_column_index)
+    @last_row = row_slice(@row_count, @row_count).flatten
+    @last_column = column_slice(@column_count, @column_count).flatten
   end
 
   def ==(other)
@@ -56,7 +48,7 @@ class Matrix
   end
 
   def columns_right_to(column_number)
-    column_slice(column_number + 1, last_column_number)
+    column_slice(column_number + 1, column_count)
   end
 
   def transform_using(transformation)
@@ -159,7 +151,7 @@ end
 
 class RemoveVerticalBorders
   def apply_to(matrix)
-    rows = matrix.column_slice(2, matrix.last_column_number - 1)
+    rows = matrix.column_slice(2, matrix.column_count - 1)
     Matrix.new(rows)
   end
 end
