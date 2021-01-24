@@ -69,29 +69,6 @@ class Matrix
   end
 end
 
-class RectangularAreaWidth
-  attr_reader :start_coordinates, :end_coordinates, :start_row, :end_row, :width
-
-  def initialize(start_coordinates, end_coordinates, width)
-    @start_coordinates = start_coordinates
-    @end_coordinates = end_coordinates
-    @start_row = @start_coordinates.row
-    @end_row = @end_coordinates.row
-    @width = width
-  end
-end
-
-class Coordinates
-  include Comparable
-
-  attr_reader :row, :column
-
-  def initialize(row, column)
-    @row = row
-    @column = column
-  end
-end
-
 class RectangularDimensions
   include Comparable
 
