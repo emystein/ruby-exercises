@@ -4,7 +4,7 @@ class Matrix
   include Enumerable
   extend Forwardable # provides def_delegators
 
-  attr_reader :dimensions, :first_column_number, :last_column_number,
+  attr_reader :dimensions, :row_count, :first_column_number, :last_column_number,
               :top_left, :top_right, :bottom_left, :bottom_right,
               :first_row, :first_column, :last_row, :last_column
 
@@ -12,6 +12,7 @@ class Matrix
 
   def initialize(rows)
     @rows = rows
+    @row_count = @rows.length
 
     @dimensions = RectangularDimensions.new(@rows.length, @rows.length)
 
@@ -42,7 +43,7 @@ class Matrix
     @rows.flatten
   end
 
-  # TODO: model vertical slices
+  # TODO: replace with column_slice_from_to
   def columns_left_to(column_number)
     column_number > 1 ? @rows.map { |row| row[0..column_number - 2] } : []
   end
@@ -51,9 +52,17 @@ class Matrix
     column_number < @max_row_index + 1 ? @rows.map { |row| row[column_number..@max_column_index] } : []
   end
 
+  def row_slice_from_to(from, to)
+    if from >= 1 && from <= to
+      @rows[from - 1..to - 1] || []
+    else
+      []
+    end
+  end
+
   def column_slice_from_to(from, to)
-    if (from >= 1 && to <= @rows.length && from <= to)
-      @rows.map { |row| row[from - 1..to - 1] }
+    if from >= 1 && from <= to
+      @rows.map { |row| row[from - 1..to - 1] || [] }
     else
       []
     end
@@ -61,17 +70,6 @@ class Matrix
 
   def transform_using(transformation)
     transformation.apply_to(self)
-  end
-
-  # TODO: generalize remove_*_borders (watch out breaking encapsulation of @rows)
-  def remove_horizontal_borders
-    rows = @rows[1, @rows.length - 2] || []
-    Matrix.new(rows)
-  end
-
-  def remove_vertical_borders
-    rows = @rows.map { |row| row[1, @max_column_index - 1] || [] }
-    Matrix.new(rows)
   end
 
   def traverse_with(method_of_traversal)
@@ -153,13 +151,15 @@ end
 
 class RemoveHorizontalBorders
   def apply_to(matrix)
-    matrix.remove_horizontal_borders
+    rows = matrix.row_slice_from_to(2, matrix.row_count - 1)
+    Matrix.new(rows)
   end
 end
 
 class RemoveVerticalBorders
   def apply_to(matrix)
-    matrix.remove_vertical_borders
+    rows = matrix.column_slice_from_to(2, matrix.last_column_number - 1)
+    Matrix.new(rows)
   end
 end
 

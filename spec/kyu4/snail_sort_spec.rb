@@ -82,6 +82,32 @@ describe 'Matrix rows and columns' do
     end
   end
 
+  describe 'Row Slice' do
+    where(:from, :to, :expected) do
+      [
+        [0, 0, []],
+        [0, 1, []],
+        [1, 0, []],
+        [1, 1, [[1, 2, 3]]],
+        [1, 2, [[1, 2, 3], [4, 5, 6]]],
+        [1, 3, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
+        [1, 4, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
+        [2, 0, []],
+        [2, 1, []],
+        [2, 2, [[4, 5, 6]]],
+        [2, 3, [[4, 5, 6], [7, 8, 9]]],
+        [3, 3, [[7, 8, 9]]]
+      ]
+    end
+    with_them do
+      it 'from x to y' do
+        matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+        expect(matrix.row_slice_from_to(from, to)).to eq(expected)
+      end
+    end
+  end
+
   describe 'Column Slice' do
     where(:from, :to, :expected) do
       [
@@ -91,12 +117,12 @@ describe 'Matrix rows and columns' do
         [1, 1, [[1], [4], [7]]],
         [1, 2, [[1, 2], [4, 5], [7, 8]]],
         [1, 3, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
-        [1, 4, []],
+        [1, 4, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
         [2, 0, []],
         [2, 1, []],
         [2, 2, [[2], [5], [8]]],
         [2, 3, [[2, 3], [5, 6], [8, 9]]],
-        [3, 3, [[3], [6], [9]]]
+        [3, 3, [[3], [6], [9]]],
       ]
     end
     with_them do
@@ -131,6 +157,7 @@ describe 'Matrix reduce' do
     with_them do
       it 'remove horizontal borders' do
         matrix = Matrix.new(seed)
+
         expect(RemoveHorizontalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
       end
     end
@@ -151,6 +178,7 @@ describe 'Matrix reduce' do
     with_them do
       it 'remove vertical borders' do
         matrix = Matrix.new(seed)
+
         expect(RemoveVerticalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
       end
     end
