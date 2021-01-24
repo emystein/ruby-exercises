@@ -42,14 +42,6 @@ class Matrix
     in_range_do(from, to) { @rows.map { |row| row[from - 1..to - 1] || [] } }
   end
 
-  def columns_left_to(column_number)
-    column_slice(1, column_number - 1)
-  end
-
-  def columns_right_to(column_number)
-    column_slice(column_number + 1, column_count)
-  end
-
   def transform_using(transformation)
     transformation.apply_to(self)
   end
@@ -138,10 +130,37 @@ class RemoveColumnNumbered
   end
 
   def apply_to(matrix)
-    rows = matrix.columns_left_to(@number_of_column_to_remove)
-                 .zip(matrix.columns_right_to(@number_of_column_to_remove))
+    left_slice = LeftColumnSlice.new(@number_of_column_to_remove)
+    right_slice = RightColumnSlice.new(@number_of_column_to_remove)
+
+    rows = matrix.transform_using(left_slice).flatten
+                 .zip(matrix.transform_using(right_slice).flatten)
                  .map(&:flatten)
                  .map { |cells| cells.filter { |cell| !cell.nil? } }
+
+    Matrix.new(rows)
+  end
+end
+
+class LeftColumnSlice
+  def initialize(number_of_column_limit)
+    @number_of_column_limit = number_of_column_limit
+  end
+
+  def apply_to(matrix)
+    rows = matrix.column_slice(1, @number_of_column_limit - 1)
+
+    Matrix.new(rows)
+  end
+end
+
+class RightColumnSlice
+  def initialize(number_of_column_limit)
+    @number_of_column_limit = number_of_column_limit
+  end
+
+  def apply_to(matrix)
+    rows = matrix.column_slice(@number_of_column_limit + 1, matrix.column_count)
 
     Matrix.new(rows)
   end

@@ -46,27 +46,6 @@ describe 'Matrix rows and columns' do
     end
   end
 
-  describe 'Columns right to a column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-    where(:column_number, :columns_to_the_left, :columns_to_the_right) do
-      [
-        [1, [], [[2, 3], [5, 6], [8, 9]]],
-        [2, [[1], [4], [7]], [[3], [6], [9]]],
-        [3, [[1, 2], [4, 5], [7, 8]], []]
-      ]
-    end
-
-    with_them do
-      it 'columns left to the column' do
-        expect(matrix.columns_left_to(column_number)).to eq(columns_to_the_left)
-      end
-      it 'columns right to the column' do
-        expect(matrix.columns_right_to(column_number)).to eq(columns_to_the_right)
-      end
-    end
-  end
-
   describe 'Slices' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
@@ -150,4 +129,30 @@ describe 'Matrix reduce' do
       end
     end
   end
+
+  describe 'Left and right column slices' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    where(:column_number, :columns_to_the_left, :columns_to_the_right) do
+      [
+        [1, [], [[2, 3], [5, 6], [8, 9]]],
+        [2, [[1], [4], [7]], [[3], [6], [9]]],
+        [3, [[1, 2], [4, 5], [7, 8]], []]
+      ]
+    end
+
+    with_them do
+      it 'columns left to the column' do
+        slice = LeftColumnSlice.new(column_number)
+
+        expect(matrix.transform_using(slice)).to eq(Matrix.new(columns_to_the_left))
+      end
+      it 'columns right to the column' do
+        slice = RightColumnSlice.new(column_number)
+
+        expect(matrix.transform_using(slice)).to eq(Matrix.new(columns_to_the_right))
+      end
+    end
+  end
+
 end
