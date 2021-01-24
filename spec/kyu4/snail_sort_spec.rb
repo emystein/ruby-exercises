@@ -46,39 +46,24 @@ describe 'Matrix rows and columns' do
     end
   end
 
-  describe 'Columns left to a column' do
-    it 'columns left to the first column' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-      expect(matrix.columns_left_to(1)).to eq([])
-    end
-    it 'columns left to the second column' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-      expect(matrix.columns_left_to(2)).to eq([[1], [4], [7]])
-    end
-    it 'columns left to the last column' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-      expect(matrix.columns_left_to(matrix.column_count)).to eq([[1, 2], [4, 5], [7, 8]])
-    end
-  end
-
   describe 'Columns right to a column' do
-    it 'columns right to the first column' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-      expect(matrix.columns_right_to(1)).to eq([[2, 3], [5, 6], [8, 9]])
+    where(:column_number, :columns_to_the_left, :columns_to_the_right) do
+      [
+        [1, [], [[2, 3], [5, 6], [8, 9]]],
+        [2, [[1], [4], [7]], [[3], [6], [9]]],
+        [3, [[1, 2], [4, 5], [7, 8]], []]
+      ]
     end
-    it 'columns right to the second column' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-      expect(matrix.columns_right_to(2)).to eq([[3], [6], [9]])
-    end
-    it 'columns right to the last column' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-      expect(matrix.columns_right_to(matrix.column_count)).to eq([])
+    with_them do
+      it 'columns left to the column' do
+        expect(matrix.columns_left_to(column_number)).to eq(columns_to_the_left)
+      end
+      it 'columns right to the column' do
+        expect(matrix.columns_right_to(column_number)).to eq(columns_to_the_right)
+      end
     end
   end
 
@@ -149,20 +134,20 @@ describe 'Matrix reduce' do
   describe 'Remove Column numbered' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    it 'first' do
-      remove_column1 = RemoveColumnNumbered.new(1)
-
-      expect(matrix.transform_using(remove_column1)).to eq(Matrix.new([]))
+    where(:number_of_column_to_remove, :expected_removed) do
+      [
+        [1, []],
+        [2, [[1, 3], [4, 6], [7, 9]]],
+        [3, [[1, 2], [4, 5], [7, 8]]]
+      ]
     end
-    it 'second' do
-      remove_column2 = RemoveColumnNumbered.new(2)
 
-      expect(matrix.transform_using(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
-    end
-    it 'last' do
-      remove_last_column = RemoveColumnNumbered.new(matrix.column_count)
+    with_them do
+      it 'remove' do
+        remove_column = RemoveColumnNumbered.new(number_of_column_to_remove)
 
-      expect(matrix.transform_using(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
+        expect(matrix.transform_using(remove_column)).to eq(Matrix.new(expected_removed))
+      end
     end
   end
 end
