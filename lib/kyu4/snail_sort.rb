@@ -43,15 +43,6 @@ class Matrix
     @rows.flatten
   end
 
-  # TODO: replace with column_slice
-  def columns_left_to(column_number)
-    column_number > 1 ? @rows.map { |row| row[0..column_number - 2] } : []
-  end
-
-  def columns_right_to(column_number)
-    column_number < @max_row_index + 1 ? @rows.map { |row| row[column_number..@max_column_index] } : []
-  end
-
   def row_slice(from, to)
     in_range_do(from, to) { @rows[from - 1..to - 1] || [] }
   end
@@ -60,12 +51,12 @@ class Matrix
     in_range_do(from, to) { @rows.map { |row| row[from - 1..to - 1] || [] } }
   end
 
-  def in_range_do(from, to)
-    if from >= 1 && from <= to
-      yield(from, to)
-    else
-      []
-    end
+  def columns_left_to(column_number)
+    column_slice(1, column_number - 1)
+  end
+
+  def columns_right_to(column_number)
+    column_slice(column_number + 1, last_column_number)
   end
 
   def transform_using(transformation)
@@ -74,6 +65,16 @@ class Matrix
 
   def traverse_with(method_of_traversal)
     method_of_traversal.traverse(self)
+  end
+
+  private
+
+  def in_range_do(from, to)
+    if from >= 1 && from <= to
+      yield(from, to)
+    else
+      []
+    end
   end
 end
 
