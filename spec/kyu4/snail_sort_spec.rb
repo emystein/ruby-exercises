@@ -103,7 +103,7 @@ describe 'Matrix rows and columns' do
       it 'from x to y' do
         matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-        expect(matrix.row_slice_from_to(from, to)).to eq(expected)
+        expect(matrix.row_slice(from, to)).to eq(expected)
       end
     end
   end
@@ -129,7 +129,7 @@ describe 'Matrix rows and columns' do
       it 'from x to y' do
         matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-        expect(matrix.column_slice_from_to(from, to)).to eq(expected)
+        expect(matrix.column_slice(from, to)).to eq(expected)
       end
     end
   end

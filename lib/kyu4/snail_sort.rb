@@ -43,7 +43,7 @@ class Matrix
     @rows.flatten
   end
 
-  # TODO: replace with column_slice_from_to
+  # TODO: replace with column_slice
   def columns_left_to(column_number)
     column_number > 1 ? @rows.map { |row| row[0..column_number - 2] } : []
   end
@@ -52,17 +52,17 @@ class Matrix
     column_number < @max_row_index + 1 ? @rows.map { |row| row[column_number..@max_column_index] } : []
   end
 
-  def row_slice_from_to(from, to)
-    if from >= 1 && from <= to
-      @rows[from - 1..to - 1] || []
-    else
-      []
-    end
+  def row_slice(from, to)
+    in_range_do(from, to) { @rows[from - 1..to - 1] || [] }
   end
 
-  def column_slice_from_to(from, to)
+  def column_slice(from, to)
+    in_range_do(from, to) { @rows.map { |row| row[from - 1..to - 1] || [] } }
+  end
+
+  def in_range_do(from, to)
     if from >= 1 && from <= to
-      @rows.map { |row| row[from - 1..to - 1] || [] }
+      yield(from, to)
     else
       []
     end
@@ -151,14 +151,14 @@ end
 
 class RemoveHorizontalBorders
   def apply_to(matrix)
-    rows = matrix.row_slice_from_to(2, matrix.row_count - 1)
+    rows = matrix.row_slice(2, matrix.row_count - 1)
     Matrix.new(rows)
   end
 end
 
 class RemoveVerticalBorders
   def apply_to(matrix)
-    rows = matrix.column_slice_from_to(2, matrix.last_column_number - 1)
+    rows = matrix.column_slice(2, matrix.last_column_number - 1)
     Matrix.new(rows)
   end
 end
