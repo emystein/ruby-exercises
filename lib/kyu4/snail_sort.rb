@@ -53,7 +53,7 @@ class Matrix
   end
 
   def transform_using(transformation)
-    transformation.transform(self)
+    transformation.apply_to(self)
   end
 
   # TODO: generalize remove_*_borders (watch out breaking encapsulation of @rows)
@@ -138,20 +138,20 @@ class SnailClockwiseTraversal
 end
 
 class RemoveBorders
-  def transform(matrix)
+  def apply_to(matrix)
     matrix.transform_using(RemoveHorizontalBorders.new)
           .transform_using(RemoveVerticalBorders.new)
   end
 end
 
 class RemoveHorizontalBorders
-  def transform(matrix)
+  def apply_to(matrix)
     matrix.remove_horizontal_borders
   end
 end
 
 class RemoveVerticalBorders
-  def transform(matrix)
+  def apply_to(matrix)
     matrix.remove_vertical_borders
   end
 end
@@ -161,7 +161,7 @@ class RemoveColumnNumbered
     @number_of_column_to_remove = number_of_column_to_remove
   end
 
-  def transform(matrix)
+  def apply_to(matrix)
     rows = matrix.columns_before(@number_of_column_to_remove)
                  .zip(matrix.columns_after(@number_of_column_to_remove))
                  .map(&:flatten)

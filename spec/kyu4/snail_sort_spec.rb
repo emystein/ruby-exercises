@@ -47,12 +47,12 @@ describe 'Matrix rows and columns' do
     it 'remove horizontal borders' do
       matrix = Matrix.new(seed)
       expected = seed[1, seed.length - 2] || []
-      expect(RemoveHorizontalBorders.new.transform(matrix)).to eq(Matrix.new(expected))
+      expect(RemoveHorizontalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
     end
     it 'remove vertical borders' do
       matrix = Matrix.new(seed)
       expected = seed.map { |row| row[1, seed.length - 2] }
-      expect(RemoveVerticalBorders.new.transform(matrix)).to eq(Matrix.new(expected))
+      expect(RemoveVerticalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
     end
   end
 end
@@ -61,7 +61,7 @@ describe 'Matrix reduce' do
   it 'reduce 3 x 3 matrix to 1 x 1 matrix' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(RemoveBorders.new.transform(matrix)).to eq(Matrix.new([[5]]))
+    expect(RemoveBorders.new.apply_to(matrix)).to eq(Matrix.new([[5]]))
   end
 
   it 'columns before first column' do
