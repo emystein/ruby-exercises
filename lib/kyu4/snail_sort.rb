@@ -4,8 +4,7 @@ class Matrix
   include Enumerable
   extend Forwardable # provides def_delegators
 
-  attr_reader :dimensions, :max_row_index, :max_column_index,
-              :first_column_number, :last_column_number,
+  attr_reader :dimensions, :first_column_number, :last_column_number,
               :top_left, :top_right, :bottom_left, :bottom_right,
               :first_row, :first_column, :last_row, :last_column
 
@@ -44,12 +43,20 @@ class Matrix
   end
 
   # TODO: model vertical slices
-  def columns_before(column_number)
+  def columns_left_to(column_number)
     column_number > 1 ? @rows.map { |row| row[0..column_number - 2] } : []
   end
 
-  def columns_after(column_number)
+  def columns_right_to(column_number)
     column_number < @max_row_index + 1 ? @rows.map { |row| row[column_number..@max_column_index] } : []
+  end
+
+  def column_slice_from_to(from, to)
+    if (from >= 1 && to <= @rows.length && from <= to)
+      @rows.map { |row| row[from - 1..to - 1] }
+    else
+      []
+    end
   end
 
   def transform_using(transformation)
@@ -162,8 +169,8 @@ class RemoveColumnNumbered
   end
 
   def apply_to(matrix)
-    rows = matrix.columns_before(@number_of_column_to_remove)
-                 .zip(matrix.columns_after(@number_of_column_to_remove))
+    rows = matrix.columns_left_to(@number_of_column_to_remove)
+                 .zip(matrix.columns_right_to(@number_of_column_to_remove))
                  .map(&:flatten)
                  .map { |cells| cells.filter { |cell| !cell.nil? } }
 

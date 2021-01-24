@@ -67,33 +67,59 @@ describe 'Matrix reduce' do
   it 'columns before first column' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.columns_before(1)).to eq([])
+    expect(matrix.columns_left_to(1)).to eq([])
   end
   it 'columns before second column' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.columns_before(2)).to eq([[1], [4], [7]])
+    expect(matrix.columns_left_to(2)).to eq([[1], [4], [7]])
   end
   it 'columns before last column' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.columns_before(matrix.last_column_number)).to eq([[1, 2], [4, 5], [7, 8]])
+    expect(matrix.columns_left_to(matrix.last_column_number)).to eq([[1, 2], [4, 5], [7, 8]])
   end
 
   it 'columns after first column' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.columns_after(1)).to eq([[2, 3], [5, 6], [8, 9]])
+    expect(matrix.columns_right_to(1)).to eq([[2, 3], [5, 6], [8, 9]])
   end
   it 'columns after second column' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.columns_after(2)).to eq([[3], [6], [9]])
+    expect(matrix.columns_right_to(2)).to eq([[3], [6], [9]])
   end
   it 'columns after last column' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.columns_after(matrix.last_column_number)).to eq([])
+    expect(matrix.columns_right_to(matrix.last_column_number)).to eq([])
+  end
+end
+
+describe 'Column Slice' do
+  where(:from, :to, :expected) do
+    [
+      [0, 0, []],
+      [0, 1, []],
+      [1, 0, []],
+      [1, 1, [[1], [4], [7]]],
+      [1, 2, [[1, 2], [4, 5], [7, 8]]],
+      [1, 3, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
+      [1, 4, []],
+      [2, 0, []],
+      [2, 1, []],
+      [2, 2, [[2], [5], [8]]],
+      [2, 3, [[2, 3], [5, 6], [8, 9]]],
+      [3, 3, [[3], [6], [9]]]
+    ]
+  end
+  with_them do
+    it 'from x to y' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.column_slice_from_to(from, to)).to eq(expected)
+    end
   end
 end
 
