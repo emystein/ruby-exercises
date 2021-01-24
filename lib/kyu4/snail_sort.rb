@@ -4,8 +4,7 @@ class Matrix
   include Enumerable
   extend Forwardable # provides def_delegators
 
-  attr_reader :dimensions, :row_count, :column_count,
-              :first_row, :first_column, :last_row, :last_column
+  attr_reader :dimensions, :row_count, :column_count, :first_row, :first_column, :last_row, :last_column
 
   def_delegators :rows, :each
 
