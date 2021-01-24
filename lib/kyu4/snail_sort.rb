@@ -52,8 +52,8 @@ class Matrix
     column_number < @max_row_index + 1 ? @rows.map { |row| row[column_number..@max_column_index] } : []
   end
 
-  def transform(transformation_to_apply)
-    transformation_to_apply.transform(self)
+  def transform_using(transformation)
+    transformation.transform(self)
   end
 
   # TODO: generalize remove_*_borders (watch out breaking encapsulation of @rows)
@@ -125,22 +125,22 @@ class SnailClockwiseTraversal
     if matrix.area_less_than_or_equal?(1, 1)
       matrix.traverse_with(LeftRightTopDownTraversal.new)
     else
-      horizontally_reduced = matrix.transform(RemoveHorizontalBorders.new)
+      horizontally_reduced = matrix.transform_using(RemoveHorizontalBorders.new)
 
       # TODO: traverse DSL (from top left to top right, from top right minus 1 to bottom right, etc.)
       matrix.first_row +
         horizontally_reduced.last_column +
         matrix.last_row.reverse +
         horizontally_reduced.first_column.reverse +
-        traverse(matrix.transform(RemoveBorders.new))
+        traverse(matrix.transform_using(RemoveBorders.new))
     end
   end
 end
 
 class RemoveBorders
   def transform(matrix)
-    matrix.transform(RemoveHorizontalBorders.new)
-          .transform(RemoveVerticalBorders.new)
+    matrix.transform_using(RemoveHorizontalBorders.new)
+          .transform_using(RemoveVerticalBorders.new)
   end
 end
 

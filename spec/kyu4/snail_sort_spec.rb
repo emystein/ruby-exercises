@@ -103,16 +103,16 @@ describe 'Remove Column' do
   it 'first' do
     remove_column1 = RemoveColumnNumbered.new(1)
 
-    expect(matrix.transform(remove_column1)).to eq(Matrix.new([]))
+    expect(matrix.transform_using(remove_column1)).to eq(Matrix.new([]))
   end
   it 'second' do
     remove_column2 = RemoveColumnNumbered.new(2)
 
-    expect(matrix.transform(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
+    expect(matrix.transform_using(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
   end
   it 'last' do
     remove_last_column = RemoveColumnNumbered.new(matrix.last_column_number)
 
-    expect(matrix.transform(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
+    expect(matrix.transform_using(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
   end
 end
