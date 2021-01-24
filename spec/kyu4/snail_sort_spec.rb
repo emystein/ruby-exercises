@@ -44,15 +44,67 @@ describe 'Matrix rows and columns' do
 
       expect(matrix.last_row).to eq(last_row)
     end
-    it 'remove horizontal borders' do
-      matrix = Matrix.new(seed)
-      expected = seed[1, seed.length - 2] || []
-      expect(RemoveHorizontalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
+  end
+
+  describe 'Columns left to a column' do
+    it 'columns left to the first column' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.columns_left_to(1)).to eq([])
     end
-    it 'remove vertical borders' do
-      matrix = Matrix.new(seed)
-      expected = seed.map { |row| row[1, seed.length - 2] }
-      expect(RemoveVerticalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
+    it 'columns left to the second column' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.columns_left_to(2)).to eq([[1], [4], [7]])
+    end
+    it 'columns left to the last column' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.columns_left_to(matrix.last_column_number)).to eq([[1, 2], [4, 5], [7, 8]])
+    end
+  end
+
+  describe 'Columns right to a column' do
+    it 'columns right to the first column' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.columns_right_to(1)).to eq([[2, 3], [5, 6], [8, 9]])
+    end
+    it 'columns right to the second column' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.columns_right_to(2)).to eq([[3], [6], [9]])
+    end
+    it 'columns right to the last column' do
+      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+      expect(matrix.columns_right_to(matrix.last_column_number)).to eq([])
+    end
+  end
+
+  describe 'Column Slice' do
+    where(:from, :to, :expected) do
+      [
+        [0, 0, []],
+        [0, 1, []],
+        [1, 0, []],
+        [1, 1, [[1], [4], [7]]],
+        [1, 2, [[1, 2], [4, 5], [7, 8]]],
+        [1, 3, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
+        [1, 4, []],
+        [2, 0, []],
+        [2, 1, []],
+        [2, 2, [[2], [5], [8]]],
+        [2, 3, [[2, 3], [5, 6], [8, 9]]],
+        [3, 3, [[3], [6], [9]]]
+      ]
+    end
+    with_them do
+      it 'from x to y' do
+        matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+        expect(matrix.column_slice_from_to(from, to)).to eq(expected)
+      end
     end
   end
 end
@@ -64,81 +116,63 @@ describe 'Matrix reduce' do
     expect(RemoveBorders.new.apply_to(matrix)).to eq(Matrix.new([[5]]))
   end
 
-  it 'columns before first column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+  describe 'Horizontal borders' do
+    where(:seed, :expected) do
+      [
+        [[], []],
+        [[[1]], []],
+        [[[1, 2]], []],
+        [[[1], [2]], []],
+        [[[1, 2], [3, 4]], []],
+        [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], [[4, 5, 6]]]
+      ]
+    end
 
-    expect(matrix.columns_left_to(1)).to eq([])
-  end
-  it 'columns before second column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-    expect(matrix.columns_left_to(2)).to eq([[1], [4], [7]])
-  end
-  it 'columns before last column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-    expect(matrix.columns_left_to(matrix.last_column_number)).to eq([[1, 2], [4, 5], [7, 8]])
-  end
-
-  it 'columns after first column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-    expect(matrix.columns_right_to(1)).to eq([[2, 3], [5, 6], [8, 9]])
-  end
-  it 'columns after second column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-    expect(matrix.columns_right_to(2)).to eq([[3], [6], [9]])
-  end
-  it 'columns after last column' do
-    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-    expect(matrix.columns_right_to(matrix.last_column_number)).to eq([])
-  end
-end
-
-describe 'Column Slice' do
-  where(:from, :to, :expected) do
-    [
-      [0, 0, []],
-      [0, 1, []],
-      [1, 0, []],
-      [1, 1, [[1], [4], [7]]],
-      [1, 2, [[1, 2], [4, 5], [7, 8]]],
-      [1, 3, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]],
-      [1, 4, []],
-      [2, 0, []],
-      [2, 1, []],
-      [2, 2, [[2], [5], [8]]],
-      [2, 3, [[2, 3], [5, 6], [8, 9]]],
-      [3, 3, [[3], [6], [9]]]
-    ]
-  end
-  with_them do
-    it 'from x to y' do
-      matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-      expect(matrix.column_slice_from_to(from, to)).to eq(expected)
+    with_them do
+      it 'remove horizontal borders' do
+        matrix = Matrix.new(seed)
+        expect(RemoveHorizontalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
+      end
     end
   end
-end
 
-describe 'Remove Column' do
-  matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+  describe 'Vertical borders' do
+    where(:seed, :expected) do
+      [
+        [[], []],
+        [[[1]], []],
+        [[[1, 2]], []],
+        [[[1], [2]], []],
+        [[[1, 2], [3, 4]], []],
+        [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], [[2], [5], [8]]],
+      ]
+    end
 
-  it 'first' do
-    remove_column1 = RemoveColumnNumbered.new(1)
-
-    expect(matrix.transform_using(remove_column1)).to eq(Matrix.new([]))
+    with_them do
+      it 'remove vertical borders' do
+        matrix = Matrix.new(seed)
+        expect(RemoveVerticalBorders.new.apply_to(matrix)).to eq(Matrix.new(expected))
+      end
+    end
   end
-  it 'second' do
-    remove_column2 = RemoveColumnNumbered.new(2)
 
-    expect(matrix.transform_using(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
-  end
-  it 'last' do
-    remove_last_column = RemoveColumnNumbered.new(matrix.last_column_number)
+  describe 'Remove Column numbered' do
+    matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    expect(matrix.transform_using(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
+    it 'first' do
+      remove_column1 = RemoveColumnNumbered.new(1)
+
+      expect(matrix.transform_using(remove_column1)).to eq(Matrix.new([]))
+    end
+    it 'second' do
+      remove_column2 = RemoveColumnNumbered.new(2)
+
+      expect(matrix.transform_using(remove_column2)).to eq(Matrix.new([[1, 3], [4, 6], [7, 9]]))
+    end
+    it 'last' do
+      remove_last_column = RemoveColumnNumbered.new(matrix.last_column_number)
+
+      expect(matrix.transform_using(remove_last_column)).to eq(Matrix.new([[1, 2], [4, 5], [7, 8]]))
+    end
   end
 end

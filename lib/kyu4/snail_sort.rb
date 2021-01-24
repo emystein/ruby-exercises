@@ -70,7 +70,7 @@ class Matrix
   end
 
   def remove_vertical_borders
-    rows = @rows.map { |row| row[1, @max_column_index - 1] }
+    rows = @rows.map { |row| row[1, @max_column_index - 1] || [] }
     Matrix.new(rows)
   end
 
