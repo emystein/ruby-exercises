@@ -143,12 +143,12 @@ describe 'Matrix reduce' do
 
     with_them do
       it 'columns left to the column' do
-        slice = LeftColumnSlice.new(column_number)
+        slice = LeftSideColumnSlice.new(column_number)
 
         expect(matrix.transform_using(slice)).to eq(Matrix.new(columns_to_the_left))
       end
       it 'columns right to the column' do
-        slice = RightColumnSlice.new(column_number)
+        slice = RightSideColumnSlice.new(column_number)
 
         expect(matrix.transform_using(slice)).to eq(Matrix.new(columns_to_the_right))
       end

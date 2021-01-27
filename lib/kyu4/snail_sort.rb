@@ -1,12 +1,9 @@
-require 'forwardable'
+require 'rectangular_dimensions'
 
 class Matrix
   include Enumerable
-  extend Forwardable # provides def_delegators
 
   attr_reader :dimensions, :row_count, :column_count, :first_row, :first_column, :last_row, :last_column
-
-  def_delegators :rows, :each
 
   def initialize(rows)
     @rows = rows
@@ -24,10 +21,6 @@ class Matrix
 
   def ==(other)
     flatten == other.flatten
-  end
-
-  def area_less_than_or_equal?(rows, columns)
-    @dimensions <= RectangularDimensions.new(rows, columns)
   end
 
   def flatten
@@ -61,25 +54,6 @@ class Matrix
   end
 end
 
-class RectangularDimensions
-  include Comparable
-
-  attr_reader :rows, :columns
-
-  def initialize(rows, columns)
-    @rows = rows
-    @columns = columns
-  end
-
-  def area
-    @rows * @columns
-  end
-
-  def <=>(other)
-    area <=> other.area
-  end
-end
-
 class LeftRightTopDownTraversal
   def traverse(matrix)
     matrix.flatten
@@ -88,7 +62,7 @@ end
 
 class SnailClockwiseTraversal
   def traverse(matrix)
-    if matrix.area_less_than_or_equal?(1, 1)
+    if matrix.dimensions <= RectangularDimensions.new(1, 1)
       matrix.traverse_with(LeftRightTopDownTraversal.new)
     else
       horizontally_reduced = matrix.transform_using(RemoveHorizontalBorders.new)
@@ -113,6 +87,7 @@ end
 class RemoveHorizontalBorders
   def apply_to(matrix)
     rows = matrix.row_slice(2, matrix.row_count - 1)
+
     Matrix.new(rows)
   end
 end
@@ -120,6 +95,7 @@ end
 class RemoveVerticalBorders
   def apply_to(matrix)
     rows = matrix.column_slice(2, matrix.column_count - 1)
+
     Matrix.new(rows)
   end
 end
@@ -130,19 +106,18 @@ class RemoveColumnNumbered
   end
 
   def apply_to(matrix)
-    left_slice = LeftColumnSlice.new(@number_of_column_to_remove)
-    right_slice = RightColumnSlice.new(@number_of_column_to_remove)
+    left_slice = LeftSideColumnSlice.new(@number_of_column_to_remove)
+    right_slice = RightSideColumnSlice.new(@number_of_column_to_remove)
 
     rows = matrix.transform_using(left_slice).flatten
                  .zip(matrix.transform_using(right_slice).flatten)
-                 .map(&:flatten)
                  .map { |cells| cells.filter { |cell| !cell.nil? } }
 
     Matrix.new(rows)
   end
 end
 
-class LeftColumnSlice
+class LeftSideColumnSlice
   def initialize(number_of_column_limit)
     @number_of_column_limit = number_of_column_limit
   end
@@ -154,7 +129,7 @@ class LeftColumnSlice
   end
 end
 
-class RightColumnSlice
+class RightSideColumnSlice
   def initialize(number_of_column_limit)
     @number_of_column_limit = number_of_column_limit
   end
