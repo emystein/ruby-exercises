@@ -1,4 +1,7 @@
 require 'rectangular_dimensions'
+require 'grid_coordinates'
+require 'kyu4/matrix_traversal'
+require 'kyu4/matrix_transformation'
 
 class Matrix
   include Enumerable
@@ -17,6 +20,10 @@ class Matrix
 
     @last_row = row_slice(@row_count, @row_count).flatten
     @last_column = column_slice(@column_count, @column_count).flatten
+  end
+
+  def area_smaller_or_equal?(dimensions)
+    @dimensions.area <= dimensions.area
   end
 
   def ==(other)
@@ -43,6 +50,16 @@ class Matrix
     method_of_traversal.traverse(self)
   end
 
+  def value_at(position)
+    at_row_column(position.row, position.column)
+  end
+
+  def at_row_column(row, column)
+    puts "#{row}, #{column}"
+    row = @rows[row - 1]
+    row ? row[column - 1] : nil
+  end
+
   private
 
   def in_range_do(from, to)
@@ -54,89 +71,97 @@ class Matrix
   end
 end
 
-class LeftRightTopDownTraversal
-  def traverse(matrix)
-    matrix.flatten
+class Turtle
+  attr_reader :current_position
+
+  def self.start_at(coordinates)
+    Turtle.new(coordinates)
+  end
+
+  def initialize(initial_coordinates)
+    @current_position = initial_coordinates
+    @steps = []
+  end
+
+  def horizontal_left_to_right(steps)
+    @steps << HorizontalLeftToRight.new(steps)
+  end
+
+  def to_the_right(steps)
+    @current_position = GridCoordinates.new(@current_position.row, @current_position.column + steps)
+  end
+
+  def down(steps)
+    @steps << Down.new(steps)
+  end
+
+  def to_down(steps)
+    @current_position = GridCoordinates.new(@current_position.row + steps, @current_position.column)
+  end
+
+
+  def walk(matrix)
+    @steps.collect { |step| step.collect_values(matrix, self) }.filter { |walked| !walked.empty? }.flatten
   end
 end
 
-class SnailClockwiseTraversal
-  def traverse(matrix)
-    if matrix.dimensions <= RectangularDimensions.new(1, 1)
-      matrix.traverse_with(LeftRightTopDownTraversal.new)
-    else
-      horizontally_reduced = matrix.transform_using(RemoveHorizontalBorders.new)
+class HorizontalLeftToRight
+  def initialize(steps_to_walk)
+    @steps_to_walk = steps_to_walk
+  end
 
-      # TODO: traverse DSL (from top left to top right, from top right minus 1 to bottom right, etc.)
-      matrix.first_row +
-        horizontally_reduced.last_column +
-        matrix.last_row.reverse +
-        horizontally_reduced.first_column.reverse +
-        traverse(matrix.transform_using(RemoveBorders.new))
-    end
+  def collect_values(matrix, turtle)
+    from = turtle.current_position
+
+    turtle.to_the_right(@steps_to_walk)
+
+    (from.column..@steps_to_walk + 1).map { |column| matrix.value_at(GridCoordinates.new(from.row, column)) }
+                                 .filter { |v| !v.nil? }
   end
 end
 
-class RemoveBorders
-  def apply_to(matrix)
-    matrix.transform_using(RemoveHorizontalBorders.new)
-          .transform_using(RemoveVerticalBorders.new)
+class Down
+  def initialize(steps_to_walk)
+    @steps_to_walk = steps_to_walk
+  end
+
+  def collect_values(matrix, turtle)
+    from = turtle.current_position
+
+    turtle.to_down(@steps_to_walk)
+
+    (from.row + 1..from.row + @steps_to_walk).map { |row| matrix.value_at(GridCoordinates.new(row, from.column)) }
+                                             .filter { |v| !v.nil? }
   end
 end
 
-class RemoveHorizontalBorders
-  def apply_to(matrix)
-    rows = matrix.row_slice(2, matrix.row_count - 1)
+# TODO: not used, I've failed you Hernán
+class NoValue
+  def present?
+    false
+  end
 
-    Matrix.new(rows)
+  def value
+    nil
+  end
+
+  def ==(other)
+    other.is_a?(NoValue)
   end
 end
 
-class RemoveVerticalBorders
-  def apply_to(matrix)
-    rows = matrix.column_slice(2, matrix.column_count - 1)
+class Value
+  attr_reader :value
 
-    Matrix.new(rows)
-  end
-end
-
-class RemoveColumnNumbered
-  def initialize(number_of_column_to_remove)
-    @number_of_column_to_remove = number_of_column_to_remove
+  def initialize(value)
+    @value = value
   end
 
-  def apply_to(matrix)
-    left_slice = LeftSideColumnSlice.new(@number_of_column_to_remove)
-    right_slice = RightSideColumnSlice.new(@number_of_column_to_remove)
-
-    rows = matrix.transform_using(left_slice).flatten
-                 .zip(matrix.transform_using(right_slice).flatten)
-                 .map { |cells| cells.filter { |cell| !cell.nil? } }
-
-    Matrix.new(rows)
-  end
-end
-
-class LeftSideColumnSlice
-  def initialize(number_of_column_limit)
-    @number_of_column_limit = number_of_column_limit
+  def present?
+    true
   end
 
-  def apply_to(matrix)
-    rows = matrix.column_slice(1, @number_of_column_limit - 1)
-
-    Matrix.new(rows)
-  end
-end
-
-class RightSideColumnSlice
-  def initialize(number_of_column_limit)
-    @number_of_column_limit = number_of_column_limit
-  end
-
-  def apply_to(matrix)
-    rows = matrix.column_slice(@number_of_column_limit + 1, matrix.column_count)
-
-    Matrix.new(rows)
+  def ==(other)
+    other.value == @value
   end
 end
