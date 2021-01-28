@@ -2,50 +2,6 @@ require 'kyu4/snail_sort'
 require 'grid_coordinates'
 require 'rspec-parameterized'
 
-describe 'Turtle horizontal left to right walk' do
-  where(:seed, :expected) do
-    [
-      [[[]], []],
-      [[[1, 2]], [1, 2]]
-    ]
-  end
-
-  with_them do
-    it 'traverse horizontal from left to right' do
-      matrix = Matrix.new(seed)
-
-      turtle = Turtle.start_at(GridCoordinates.new(1, 1))
-      turtle.horizontal_left_to_right(1)
-      traversed = turtle.walk(matrix)
-
-      expect(traversed).to eq(expected)
-    end
-  end
-end
-
-describe 'Turtle horizontal left to right then down' do
-  where(:seed, :expected) do
-    [
-      [[[]], []],
-      [[[1, 2]], [1, 2]],
-      [[[1, 2], [3, 4]], [1, 2, 4]]
-    ]
-  end
-
-  with_them do
-    it 'traverse' do
-      matrix = Matrix.new(seed)
-
-      turtle = Turtle.start_at(GridCoordinates.new(1, 1))
-      turtle.horizontal_left_to_right(1)
-      turtle.down(1)
-      traversed = turtle.walk(matrix)
-
-      expect(traversed).to eq(expected)
-    end
-  end
-end
-
 describe 'SnailClockwiseTraversal' do
   where(:seed, :expected) do
     [
