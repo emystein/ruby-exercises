@@ -12,7 +12,7 @@ class Turtle
     @matrix_to_walk = matrix_to_walk
     @current_position = initial_position
     @movements = []
-    @traversed_path = []
+    @traveled_path = []
   end
 
   def right(number_of_steps)
@@ -25,14 +25,14 @@ class Turtle
 
   def move(movement_class, number_of_steps)
     movement = movement_class.new(self, number_of_steps)
-    @traversed_path << movement.over(@matrix_to_walk)
+    @traveled_path << movement.over(@matrix_to_walk)
   end
 
   def traveled_so_far
-    @traversed_path.flatten
+    @traveled_path.flatten
   end
 
-  def increment_position(movement)
+  def update_position(movement)
     @current_position = movement.from_position(@current_position)
   end
 end
@@ -61,7 +61,7 @@ class TurtleRoutePlan
     @movements.flat_map { |movement| movement.over(matrix_to_walk) }
   end
 
-  def increment_position(movement)
+  def update_position(movement)
     @current_position = movement.from_position(@current_position)
   end
 
@@ -89,7 +89,7 @@ class LeftToRight < TurtleMovement
   def over(matrix_to_walk)
     from = @turtle.current_position
 
-    @turtle.increment_position(self)
+    @turtle.update_position(self)
 
     (from.column..@steps_to_walk + 1).map { |column| matrix_to_walk.value_at(GridCoordinates.new(from.row, column)) }
                                      .reject(&:nil?)
@@ -104,10 +104,10 @@ class Down < TurtleMovement
   def over(matrix_to_walk)
     from = @turtle.current_position
 
-    @turtle.increment_position(self)
+    @turtle.update_position(self)
 
     (from.row + 1..from.row + @steps_to_walk).map { |row| matrix_to_walk.value_at(GridCoordinates.new(row, from.column)) }
-                                             .filter { |v| !v.nil? }
+                                             .reject(&:nil?)
   end
 
   def from_position(position)
