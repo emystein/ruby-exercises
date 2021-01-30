@@ -80,19 +80,29 @@ class TurtleMovement
     @steps_to_walk = steps_to_walk
   end
 
-  def over(matrix_to_walk)
+  def start_coordinates
+    @turtle.current_position
+  end
+
+  def positions_to_cover
     raise NotImplementedError, 'Implement this'
+  end
+
+  def over(matrix_to_walk)
+    traveled = positions_to_cover.map { |position| matrix_to_walk.value_at(position) }
+                                 .reject(&:nil?)
+
+    @turtle.update_position(self)
+
+    traveled
   end
 end
 
 class LeftToRight < TurtleMovement
-  def over(matrix_to_walk)
-    from = @turtle.current_position
-
-    @turtle.update_position(self)
-
-    (from.column..@steps_to_walk + 1).map { |column| matrix_to_walk.value_at(GridCoordinates.new(from.row, column)) }
-                                     .reject(&:nil?)
+  def positions_to_cover
+    (start_coordinates.column..@steps_to_walk + 1).map do |column|
+      GridCoordinates.new(start_coordinates.row, column)
+    end
   end
 
   def from_position(position)
@@ -101,13 +111,10 @@ class LeftToRight < TurtleMovement
 end
 
 class Down < TurtleMovement
-  def over(matrix_to_walk)
-    from = @turtle.current_position
-
-    @turtle.update_position(self)
-
-    (from.row + 1..from.row + @steps_to_walk).map { |row| matrix_to_walk.value_at(GridCoordinates.new(row, from.column)) }
-                                             .reject(&:nil?)
+  def positions_to_cover
+    (start_coordinates.row + 1..start_coordinates.row + @steps_to_walk). map do |row|
+      GridCoordinates.new(row, start_coordinates.column)
+    end
   end
 
   def from_position(position)
