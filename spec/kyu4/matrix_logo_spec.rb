@@ -15,11 +15,12 @@ describe 'TurtleRoutePlan horizontal left to right walk' do
     it 'traverse horizontal from left to right' do
       matrix = Matrix.new(seed)
 
-      turtle = TurtleRoutePlan.start_at(GridCoordinates.new(1, 1))
-      turtle.right(1)
-      traversed = turtle.walk_on(matrix)
+      turtle = Turtle.start_at(matrix, GridCoordinates.new(1, 1))
+      route = TurtleRoutePlan.new(turtle)
+      route.right(1)
+      turtle.follow_route(route)
 
-      expect(traversed).to eq(expected)
+      expect(turtle.traveled_so_far).to eq(expected)
     end
   end
 end
@@ -37,12 +38,14 @@ describe 'TurtleRoutePlan horizontal left to right then down' do
     it 'traverse' do
       matrix = Matrix.new(seed)
 
-      turtle = TurtleRoutePlan.start_at(GridCoordinates.new(1, 1))
-      turtle.right(1)
-      turtle.down(1)
-      traversed = turtle.walk_on(matrix)
+      turtle = Turtle.start_at(matrix, GridCoordinates.new(1, 1))
+      route = TurtleRoutePlan.new(turtle)
+      route.right(1)
+      route.down(1)
 
-      expect(traversed).to eq(expected)
+      turtle.follow_route(route)
+
+      expect(turtle.traveled_so_far).to eq(expected)
     end
   end
 end

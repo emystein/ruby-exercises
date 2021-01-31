@@ -55,7 +55,6 @@ class Matrix
   end
 
   def at_row_column(row, column)
-    puts "#{row}, #{column}"
     row = @rows[row - 1]
     row ? row[column - 1] : nil
   end

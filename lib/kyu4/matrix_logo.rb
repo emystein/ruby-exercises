@@ -28,47 +28,41 @@ class Turtle
     @traveled_path << movement.over(@matrix_to_walk)
   end
 
+  def follow_route(route)
+    @traveled_path << route.movements.map { |movement| movement.over(@matrix_to_walk) }
+  end
+  
   def traveled_so_far
     @traveled_path.flatten
   end
 
   def update_position(movement)
-    @current_position = movement.from_position(@current_position)
+    @current_position = movement.from(@current_position)
   end
 end
 
 class TurtleRoutePlan
-  attr_reader :current_position
+  attr_reader :movements
 
-  def self.start_at(initial_position)
-    TurtleRoutePlan.new(initial_position)
-  end
-
-  def initialize(initial_position)
-    @current_position = initial_position
+  def initialize(turtle_to_move)
+    @turtle_to_move = turtle_to_move
     @movements = []
   end
 
   def right(number_of_steps)
-    add_movement(LeftToRight, number_of_steps)
+    move(LeftToRight, number_of_steps)
   end
 
   def down(number_of_steps)
-    add_movement(Down, number_of_steps)
+    move(Down, number_of_steps)
+  end
+
+  def move(klass, number_of_steps)
+    @movements << klass.new(@turtle_to_move, number_of_steps)
   end
 
   def walk_on(matrix_to_walk)
     @movements.flat_map { |movement| movement.over(matrix_to_walk) }
-  end
-
-  def update_position(movement)
-    @current_position = movement.from_position(@current_position)
-  end
-
-  private
-
-  def add_movement(klass, number_of_steps)
-    @movements << klass.new(self, number_of_steps)
   end
 end
 
@@ -105,7 +99,7 @@ class LeftToRight < TurtleMovement
     end
   end
 
-  def from_position(position)
+  def from(position)
     GridCoordinates.new(position.row, position.column + @steps_to_walk)
   end
 end
@@ -117,8 +111,7 @@ class Down < TurtleMovement
     end
   end
 
-  def from_position(position)
+  def from(position)
     GridCoordinates.new(position.row + @steps_to_walk, position.column)
   end
 end
-
