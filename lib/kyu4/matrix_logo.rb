@@ -28,10 +28,10 @@ class Turtle
     @traveled_path << movement.over(@matrix_to_walk)
   end
 
-  def follow_route(route)
-    @traveled_path << route.movements.map { |movement| movement.over(@matrix_to_walk) }
+  def travel(route)
+    @traveled_path << route.traverse(@matrix_to_walk, self)
   end
-  
+
   def traveled_so_far
     @traveled_path.flatten
   end
@@ -41,28 +41,39 @@ class Turtle
   end
 end
 
-class TurtleRoutePlan
-  attr_reader :movements
-
-  def initialize(turtle_to_move)
-    @turtle_to_move = turtle_to_move
-    @movements = []
+class TurtleRoute
+  def initialize
+    @tracts = []
   end
 
   def right(number_of_steps)
-    move(LeftToRight, number_of_steps)
+    add_tract(LeftToRight, number_of_steps)
   end
 
   def down(number_of_steps)
-    move(Down, number_of_steps)
+    add_tract(Down, number_of_steps)
   end
 
-  def move(klass, number_of_steps)
-    @movements << klass.new(@turtle_to_move, number_of_steps)
+  def add_tract(klass, steps_to_walk)
+    @tracts << RouteTract.new(klass, steps_to_walk)
   end
 
-  def walk_on(matrix_to_walk)
-    @movements.flat_map { |movement| movement.over(matrix_to_walk) }
+  def traverse(matrix_to_walk, turtle)
+    @tracts.map { |router| router.build(turtle) }
+           .flat_map { |movement| movement.over(matrix_to_walk) }
+  end
+end
+
+class RouteTract
+  attr_reader :movement_class, :steps_to_walk
+
+  def initialize(movement_class, steps_to_walk)
+    @movement_class = movement_class
+    @steps_to_walk = steps_to_walk
+  end
+
+  def build(turtle)
+    @movement_class.new(turtle, @steps_to_walk)
   end
 end
 
@@ -106,7 +117,7 @@ end
 
 class Down < TurtleMovement
   def positions_to_cover
-    (start_coordinates.row + 1..start_coordinates.row + @steps_to_walk). map do |row|
+    (start_coordinates.row + 1..start_coordinates.row + @steps_to_walk).map do |row|
       GridCoordinates.new(row, start_coordinates.column)
     end
   end

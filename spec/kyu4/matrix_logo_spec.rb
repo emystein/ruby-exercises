@@ -3,7 +3,7 @@ require 'kyu4/matrix_logo'
 require 'grid_coordinates'
 require 'rspec-parameterized'
 
-describe 'TurtleRoutePlan horizontal left to right walk' do
+describe 'TurtleRoute horizontal left to right walk' do
   where(:seed, :expected) do
     [
       [[[]], []],
@@ -16,16 +16,18 @@ describe 'TurtleRoutePlan horizontal left to right walk' do
       matrix = Matrix.new(seed)
 
       turtle = Turtle.start_at(matrix, GridCoordinates.new(1, 1))
-      route = TurtleRoutePlan.new(turtle)
+
+      route = TurtleRoute.new
       route.right(1)
-      turtle.follow_route(route)
+
+      turtle.travel(route)
 
       expect(turtle.traveled_so_far).to eq(expected)
     end
   end
 end
 
-describe 'TurtleRoutePlan horizontal left to right then down' do
+describe 'TurtleRoute horizontal left to right then down' do
   where(:seed, :expected) do
     [
       [[[]], []],
@@ -39,16 +41,18 @@ describe 'TurtleRoutePlan horizontal left to right then down' do
       matrix = Matrix.new(seed)
 
       turtle = Turtle.start_at(matrix, GridCoordinates.new(1, 1))
-      route = TurtleRoutePlan.new(turtle)
+
+      route = TurtleRoute.new
       route.right(1)
       route.down(1)
 
-      turtle.follow_route(route)
+      turtle.travel(route)
 
       expect(turtle.traveled_so_far).to eq(expected)
     end
   end
 end
+
 
 describe 'Turtle walk to the right' do
   where(:seed, :expected) do
