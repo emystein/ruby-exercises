@@ -35,12 +35,12 @@ describe 'Move horizontal left to right walk' do
   end
 end
 
-describe 'Move horizontal left to right then down' do
-  where(:seed, :expected) do
+describe 'Move right then down' do
+  where(:seed, :steps_to_the_right, :steps_down,:expected) do
     [
-      [[[]], []],
-      [[[1, 2]], [1, 2]],
-      [[[1, 2], [3, 4]], [1, 2, 4]]
+      [[[]], 1, 1, []],
+      [[[1, 2]], 1, 1, [1, 2]],
+      [[[1, 2], [3, 4]], 1, 1, [1, 2, 4]]
     ]
   end
 
@@ -50,15 +50,15 @@ describe 'Move horizontal left to right then down' do
       @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
-      @turtle.right(1)
-      @turtle.down(1)
+      @turtle.right(steps_to_the_right)
+      @turtle.down(steps_down)
 
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following route' do
       itinerary = Itinerary.new
-      itinerary.right(1)
-      itinerary.down(1)
+      itinerary.right(steps_to_the_right)
+      itinerary.down(steps_down)
 
       @turtle.travel(itinerary)
 
