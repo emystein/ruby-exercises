@@ -25,11 +25,11 @@ class Turtle
 
   def move(movement_class, number_of_steps)
     movement = movement_class.new(self, number_of_steps)
-    @traveled_path << movement.over(@matrix_to_walk)
+    @traveled_path << movement.on(@matrix_to_walk)
   end
 
-  def travel(route)
-    @traveled_path << route.traverse(@matrix_to_walk, self)
+  def travel(itinerary)
+    @traveled_path << itinerary.traverse(@matrix_to_walk, self)
   end
 
   def traveled_so_far
@@ -41,7 +41,7 @@ class Turtle
   end
 end
 
-class TurtleRoute
+class Itinerary
   def initialize
     @tracts = []
   end
@@ -55,16 +55,16 @@ class TurtleRoute
   end
 
   def add_tract(klass, steps_to_walk)
-    @tracts << RouteTract.new(klass, steps_to_walk)
+    @tracts << ItineraryTract.new(klass, steps_to_walk)
   end
 
   def traverse(matrix_to_walk, turtle)
-    @tracts.map { |router| router.build(turtle) }
-           .flat_map { |movement| movement.over(matrix_to_walk) }
+    @tracts.map { |tract| tract.prepare(turtle) }
+           .flat_map { |movement| movement.on(matrix_to_walk) }
   end
 end
 
-class RouteTract
+class ItineraryTract
   attr_reader :movement_class, :steps_to_walk
 
   def initialize(movement_class, steps_to_walk)
@@ -72,7 +72,7 @@ class RouteTract
     @steps_to_walk = steps_to_walk
   end
 
-  def build(turtle)
+  def prepare(turtle)
     @movement_class.new(turtle, @steps_to_walk)
   end
 end
@@ -93,7 +93,7 @@ class TurtleMovement
     raise NotImplementedError, 'Implement this'
   end
 
-  def over(matrix_to_walk)
+  def on(matrix_to_walk)
     traveled = positions_to_cover.map { |position| matrix_to_walk.value_at(position) }
                                  .reject(&:nil?)
 
