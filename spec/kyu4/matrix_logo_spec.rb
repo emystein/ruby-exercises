@@ -3,11 +3,12 @@ require 'kyu4/matrix_logo'
 require 'grid_coordinates'
 require 'rspec-parameterized'
 
-describe 'Move left first step' do
-  where(:seed, :steps, :expected) do
+describe 'Move left' do
+  where(:seed, :steps, :iterations, :expected) do
     [
-      [[[]], 1, []],
-      [[[1, 2, 3]], 1, [3, 2]]
+      [[[]], 1, 1, []],
+      [[[1, 2, 3]], 1, 1, [3, 2]],
+      [[[1, 2, 3]], 1, 2, [3, 2, 1]]
     ]
   end
 
@@ -17,13 +18,18 @@ describe 'Move left first step' do
       @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 3))
     end
     it 'Turtle walk' do
-      @turtle.left(steps)
+      (1..iterations).each do
+        @turtle.left(steps)
+      end
 
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
       itinerary = Itinerary.new
-      itinerary.left(steps)
+
+      (1..iterations).each do
+        itinerary.left(steps)
+      end
 
       @turtle.travel(itinerary)
 
@@ -32,45 +38,15 @@ describe 'Move left first step' do
   end
 end
 
-describe 'Move left second step' do
-  where(:seed, :steps, :expected) do
+describe 'Move right' do
+  where(:seed, :steps, :iterations, :expected) do
     [
-      [[[]], 1, []],
-      [[[1, 2, 3]], 1, [3, 2, 1]]
-    ]
-  end
-
-  with_them do
-    before(:each) do
-      @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 3))
-    end
-    it 'Turtle walk' do
-      @turtle.left(steps)
-      @turtle.left(steps)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-    it 'Travel following itinerary' do
-      itinerary = Itinerary.new
-      itinerary.left(steps)
-      itinerary.left(steps)
-
-      @turtle.travel(itinerary)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-  end
-end
-
-describe 'Move right first step' do
-  where(:seed, :steps_to_walk, :expected) do
-    [
-      [[[]], 1, []],
-      [[[1, 2, 3]], 0, [1]],
-      [[[1, 2, 3]], 1, [1, 2]],
-      [[[1, 2, 3]], 2, [1, 2, 3]],
-      [[[1, 2, 3]], 3, [1, 2, 3]]
+      [[[]], 1, 1, []],
+      [[[1, 2, 3]], 0, 1, [1]],
+      [[[1, 2, 3]], 1, 1, [1, 2]],
+      [[[1, 2, 3]], 2, 1, [1, 2, 3]],
+      [[[1, 2, 3]], 3, 1, [1, 2, 3]],
+      [[[1, 2, 3]], 1, 2, [1, 2, 3]]
     ]
   end
 
@@ -80,13 +56,18 @@ describe 'Move right first step' do
       @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
-      @turtle.right(steps_to_walk)
+      (1..iterations).each do
+        @turtle.right(steps)
+      end
 
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following route' do
       itinerary = Itinerary.new
-      itinerary.right(steps_to_walk)
+
+      (1..iterations).each do
+        itinerary.right(steps)
+      end
 
       @turtle.travel(itinerary)
 
@@ -95,10 +76,50 @@ describe 'Move right first step' do
   end
 end
 
-describe 'Move right second step' do
-  where(:seed, :steps_to_walk, :expected) do
+describe 'Move up' do
+  where(:seed, :initial_row, :steps, :iterations, :expected) do
     [
-      [[[1, 2, 3]], 1, [1, 2, 3]]
+      [[[]], 2, 1, 1, []],
+      [[[1, 2], [3, 4]], 2, 1, 1, [3, 1]],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 2, 1, 1, [4, 1]],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 3, 1, 2, [7, 4, 1]]
+    ]
+  end
+
+  with_them do
+    before(:each) do
+      @matrix = Matrix.new(seed)
+      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(initial_row, 1))
+    end
+    it 'Turtle walk' do
+      (1..iterations).each do
+        @turtle.up(steps)
+      end
+
+      expect(@turtle.traveled_so_far).to eq(expected)
+    end
+    it 'Travel following itinerary' do
+      itinerary = Itinerary.new
+
+      (1..iterations).each do
+        itinerary.up(steps)
+      end
+
+      @turtle.travel(itinerary)
+
+      expect(@turtle.traveled_so_far).to eq(expected)
+    end
+  end
+end
+
+describe 'Move down' do
+  where(:seed, :steps, :iterations, :expected) do
+    [
+      [[[]], 1, 1, []],
+      [[[1, 2]], 1, 1, [1]],
+      [[[1, 2], [3, 4]], 1, 1, [1, 3]],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, 1, [1, 4]],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, 2, [1, 4, 7]]
     ]
   end
 
@@ -108,137 +129,18 @@ describe 'Move right second step' do
       @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
-      @turtle.right(steps_to_walk)
-      @turtle.right(steps_to_walk)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-    it 'Travel following route' do
-      itinerary = Itinerary.new
-      itinerary.right(steps_to_walk)
-      itinerary.right(steps_to_walk)
-
-      @turtle.travel(itinerary)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-  end
-end
-
-describe 'Move up first step' do
-  where(:seed, :steps, :expected) do
-    [
-      [[[]], 1, []],
-      [[[1, 2], [3, 4]], 1, [3, 1]],
-      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, [4, 1]]
-    ]
-  end
-
-  with_them do
-    before(:each) do
-      @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(2, 1))
-    end
-    it 'Turtle walk' do
-      @turtle.up(steps)
+      (1..iterations).each do
+        @turtle.down(steps)
+      end
 
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
       itinerary = Itinerary.new
-      itinerary.up(steps)
 
-      @turtle.travel(itinerary)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-  end
-end
-
-describe 'Move up second step' do
-  where(:seed, :steps, :expected) do
-    [
-      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, [7, 4, 1]]
-    ]
-  end
-
-  with_them do
-    before(:each) do
-      @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(3, 1))
-    end
-    it 'Turtle walk' do
-      @turtle.up(steps)
-      @turtle.up(steps)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-    it 'Travel following itinerary' do
-      itinerary = Itinerary.new
-      itinerary.up(steps)
-      itinerary.up(steps)
-
-      @turtle.travel(itinerary)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-  end
-end
-
-describe 'Move down first step' do
-  where(:seed, :steps, :expected) do
-    [
-      [[[]], 1, []],
-      [[[1, 2]], 1, [1]],
-      [[[1, 2], [3, 4]], 1, [1, 3]],
-      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, [1, 4]]
-    ]
-  end
-
-  with_them do
-    before(:each) do
-      @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
-    end
-    it 'Turtle walk' do
-      @turtle.down(steps)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-    it 'Travel following itinerary' do
-      itinerary = Itinerary.new
-      itinerary.down(steps)
-
-      @turtle.travel(itinerary)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-  end
-end
-
-describe 'Move down second step' do
-  where(:seed, :steps, :expected) do
-    [
-      [[[1, 2], [3, 4]], 1, [1, 3]],
-      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, [1, 4, 7]]
-    ]
-  end
-
-  with_them do
-    before(:each) do
-      @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
-    end
-    it 'Turtle walk' do
-      @turtle.down(steps)
-      @turtle.down(steps)
-
-      expect(@turtle.traveled_so_far).to eq(expected)
-    end
-    it 'Travel following itinerary' do
-      itinerary = Itinerary.new
-      itinerary.down(steps)
-      itinerary.down(steps)
+      (1..iterations).each do
+        itinerary.down(steps)
+      end
 
       @turtle.travel(itinerary)
 
