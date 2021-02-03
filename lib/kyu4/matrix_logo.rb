@@ -23,6 +23,10 @@ class Turtle
     move(Down, number_of_steps)
   end
 
+  def left(number_of_steps)
+    move(Left, number_of_steps)
+  end
+
   def move(movement_class, number_of_steps)
     movement = movement_class.new(self, number_of_steps)
     @traveled_path << movement.on(@matrix_to_walk)
@@ -52,6 +56,10 @@ class Itinerary
 
   def down(number_of_steps)
     add_tract(Down, number_of_steps)
+  end
+
+  def left(number_of_steps)
+    add_tract(Left, number_of_steps)
   end
 
   def add_tract(klass, steps_to_walk)
@@ -126,3 +134,16 @@ class Down < TurtleMovement
     GridCoordinates.new(position.row + @steps_to_walk, position.column)
   end
 end
+
+class Left < TurtleMovement
+  def positions_to_cover
+    start_coordinates.column.downto(start_coordinates.column - @steps_to_walk).map do |column|
+      GridCoordinates.new(start_coordinates.row, column)
+    end
+  end
+
+  def from(position)
+    GridCoordinates.new(position.row, position.column - @steps_to_walk)
+  end
+end
+

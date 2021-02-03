@@ -3,7 +3,7 @@ require 'kyu4/matrix_logo'
 require 'grid_coordinates'
 require 'rspec-parameterized'
 
-describe 'Move horizontal left to right walk' do
+describe 'Move right' do
   where(:seed, :steps_to_walk, :expected) do
     [
       [[[]], 1, []],
@@ -35,12 +35,13 @@ describe 'Move horizontal left to right walk' do
   end
 end
 
-describe 'Move right then down' do
-  where(:seed, :steps_to_the_right, :steps_down,:expected) do
+describe 'Move down' do
+  where(:seed, :steps_down, :expected) do
     [
-      [[[]], 1, 1, []],
-      [[[1, 2]], 1, 1, [1, 2]],
-      [[[1, 2], [3, 4]], 1, 1, [1, 2, 4]]
+      [[[]], 1, []],
+      [[[1, 2]], 1, []],
+      [[[1, 2], [3, 4]], 1, [3]],
+      [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, [4]]
     ]
   end
 
@@ -50,15 +51,42 @@ describe 'Move right then down' do
       @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
-      @turtle.right(steps_to_the_right)
       @turtle.down(steps_down)
 
       expect(@turtle.traveled_so_far).to eq(expected)
     end
-    it 'Travel following route' do
+    it 'Travel following itinerary' do
       itinerary = Itinerary.new
-      itinerary.right(steps_to_the_right)
       itinerary.down(steps_down)
+
+      @turtle.travel(itinerary)
+
+      expect(@turtle.traveled_so_far).to eq(expected)
+    end
+  end
+end
+
+describe 'Move left' do
+  where(:seed, :steps, :expected) do
+    [
+      [[[]], 1, []],
+      [[[1, 2]], 1, [2, 1]]
+    ]
+  end
+
+  with_them do
+    before(:each) do
+      @matrix = Matrix.new(seed)
+      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 2))
+    end
+    it 'Turtle walk' do
+      @turtle.left(steps)
+
+      expect(@turtle.traveled_so_far).to eq(expected)
+    end
+    it 'Travel following itinerary' do
+      itinerary = Itinerary.new
+      itinerary.left(steps)
 
       @turtle.travel(itinerary)
 
