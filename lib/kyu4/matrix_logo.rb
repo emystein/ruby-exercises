@@ -19,6 +19,10 @@ class Turtle
     move(Right, number_of_steps)
   end
 
+  def up(number_of_steps)
+    move(Up, number_of_steps)
+  end
+
   def down(number_of_steps)
     move(Down, number_of_steps)
   end
@@ -52,6 +56,10 @@ class Itinerary
 
   def right(number_of_steps)
     add_tract(Right, number_of_steps)
+  end
+
+  def up(number_of_steps)
+    add_tract(Up, number_of_steps)
   end
 
   def down(number_of_steps)
@@ -120,6 +128,18 @@ class Right < TurtleMovement
 
   def from(position)
     GridCoordinates.new(position.row, position.column + @steps_to_walk)
+  end
+end
+
+class Up < TurtleMovement
+  def positions_to_cover
+    (start_coordinates.row - 1).downto(start_coordinates.row - @steps_to_walk).map do |row|
+      GridCoordinates.new(row, start_coordinates.column)
+    end
+  end
+
+  def from(position)
+    GridCoordinates.new(position.row - @steps_to_walk, position.column)
   end
 end
 
