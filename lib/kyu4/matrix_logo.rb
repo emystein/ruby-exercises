@@ -177,12 +177,24 @@ class Positioner
     raise NotImplementedError, 'Implement this'
   end
 
+  def end_position
+    raise NotImplementedError, 'Implement this'
+  end
+
   def positions_to_cover
     raise NotImplementedError, 'Implement this'
   end
 
   def coordinates
     raise NotImplementedError, 'Implement this'
+  end
+
+  def incremental_range
+    (start_position..end_position)
+  end
+
+  def decremental_range
+    start_position.downto(end_position)
   end
 end
 
@@ -203,8 +215,12 @@ class LeftPositioner < HorizontalPositioner
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column - 1
   end
 
+  def end_position
+    start_coordinates.column - @steps_to_walk
+  end
+
   def positions_to_cover
-    start_position.downto(start_coordinates.column - @steps_to_walk)
+    decremental_range
   end
 end
 
@@ -213,8 +229,12 @@ class RightPositioner < HorizontalPositioner
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column + 1
   end
 
+  def end_position
+    start_position + @steps_to_walk
+  end
+
   def positions_to_cover
-    (start_position..start_position + @steps_to_walk)
+    incremental_range
   end
 end
 
@@ -223,8 +243,12 @@ class UpPositioner < VerticalPositioner
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row - 1
   end
 
+  def end_position
+    start_coordinates.row - @steps_to_walk
+  end
+
   def positions_to_cover
-    start_position.downto(start_coordinates.row - @steps_to_walk)
+    decremental_range
   end
 end
 
@@ -233,7 +257,11 @@ class DownPositioner < VerticalPositioner
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row + 1
   end
 
+  def end_position
+    start_coordinates.row + @steps_to_walk
+  end
+
   def positions_to_cover
-    (start_position..start_coordinates.row + @steps_to_walk)
+    incremental_range
   end
 end
