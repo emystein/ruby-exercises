@@ -106,14 +106,6 @@ class TurtleMovement
     @steps_to_walk = steps_to_walk
   end
 
-  def start_coordinates
-    @turtle.current_position
-  end
-
-  def positions_to_cover
-    raise NotImplementedError, 'Implement this'
-  end
-
   def coordinates_to_cover
     raise NotImplementedError, 'Implement this'
   end
@@ -128,7 +120,89 @@ class TurtleMovement
   end
 end
 
-class LeftPositioner
+class Coordinates
+  def initialize(positioner)
+    @positioner = positioner
+  end
+end
+
+class HorizontalCoordinates < Coordinates
+  def coordinates
+    @positioner.positions_to_cover.map { |column| GridCoordinates.new(@positioner.start_coordinates.row, column) }
+  end
+end
+
+class VerticalCoordinates < Coordinates
+  def coordinates
+    @positioner.positions_to_cover.map { |row| GridCoordinates.new(row, @positioner.start_coordinates.column) }
+  end
+end
+
+class Left < TurtleMovement
+  def initialize(turtle_to_move, steps_to_walk)
+    super(turtle_to_move, steps_to_walk)
+    positioner = LeftPositioner.new(turtle_to_move, steps_to_walk)
+    @coordinates = HorizontalCoordinates.new(positioner)
+  end
+
+  def coordinates_to_cover
+    @coordinates.coordinates
+  end
+
+  def from(position)
+    GridCoordinates.new(position.row, position.column - @steps_to_walk)
+  end
+end
+
+class Right < TurtleMovement
+  def initialize(turtle, steps_to_walk)
+    super(turtle, steps_to_walk)
+    positioner = RightPositioner.new(turtle, steps_to_walk)
+    @coordinates = HorizontalCoordinates.new(positioner)
+  end
+
+  def coordinates_to_cover
+    @coordinates.coordinates
+  end
+
+  def from(position)
+    GridCoordinates.new(position.row, position.column + @steps_to_walk)
+  end
+end
+
+class Up < TurtleMovement
+  def initialize(turtle, steps_to_walk)
+    super(turtle, steps_to_walk)
+    positioner = UpPositioner.new(turtle, steps_to_walk)
+    @coordinates = VerticalCoordinates.new(positioner)
+  end
+
+  def coordinates_to_cover
+    @coordinates.coordinates
+  end
+
+  def from(position)
+    GridCoordinates.new(position.row - @steps_to_walk, position.column)
+  end
+end
+
+class Down < TurtleMovement
+  def initialize(turtle, steps_to_walk)
+    super(turtle, steps_to_walk)
+    positioner = DownPositioner.new(turtle, steps_to_walk)
+    @coordinates = VerticalCoordinates.new(positioner)
+  end
+
+  def coordinates_to_cover
+    @coordinates.coordinates
+  end
+
+  def from(position)
+    GridCoordinates.new(position.row + @steps_to_walk, position.column)
+  end
+end
+
+class Positioner
   def initialize(turtle, steps_to_walk)
     @turtle = turtle
     @steps_to_walk = steps_to_walk
@@ -138,6 +212,16 @@ class LeftPositioner
     @turtle.current_position
   end
 
+  def start_position
+    raise NotImplementedError, 'Implement this'
+  end
+
+  def positions_to_cover
+    raise NotImplementedError, 'Implement this'
+  end
+end
+
+class LeftPositioner < Positioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column - 1
   end
@@ -147,31 +231,7 @@ class LeftPositioner
   end
 end
 
-class Left < TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk)
-    @positioner = LeftPositioner.new(turtle_to_move, steps_to_walk)
-  end
-
-  def coordinates_to_cover
-    @positioner.positions_to_cover.map { |column| GridCoordinates.new(@positioner.start_coordinates.row, column) }
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row, position.column - @steps_to_walk)
-  end
-end
-
-class RightPositioner
-  def initialize(turtle, steps_to_walk)
-    @turtle = turtle
-    @steps_to_walk = steps_to_walk
-  end
-
-  def start_coordinates
-    @turtle.current_position
-  end
-
+class RightPositioner < Positioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column + 1
   end
@@ -181,31 +241,7 @@ class RightPositioner
   end
 end
 
-class Right < TurtleMovement
-  def initialize(turtle, steps_to_walk)
-    super(turtle, steps_to_walk)
-    @positioner = RightPositioner.new(turtle, steps_to_walk)
-  end
-
-  def coordinates_to_cover
-    @positioner.positions_to_cover.map { |column| GridCoordinates.new(@positioner.start_coordinates.row, column) }
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row, position.column + @steps_to_walk)
-  end
-end
-
-class UpPositioner
-  def initialize(turtle, steps_to_walk)
-    @turtle = turtle
-    @steps_to_walk = steps_to_walk
-  end
-
-  def start_coordinates
-    @turtle.current_position
-  end
-
+class UpPositioner < Positioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row - 1
   end
@@ -215,51 +251,12 @@ class UpPositioner
   end
 end
 
-class Up < TurtleMovement
-  def initialize(turtle, steps_to_walk)
-    super(turtle, steps_to_walk)
-    @positioner = UpPositioner.new(turtle, steps_to_walk)
-  end
-
-  def coordinates_to_cover
-    @positioner.positions_to_cover.map { |row| GridCoordinates.new(row, @positioner.start_coordinates.column) }
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row - @steps_to_walk, position.column)
-  end
-end
-
-class DownPositioner
-  def initialize(turtle, steps_to_walk)
-    @turtle = turtle
-    @steps_to_walk = steps_to_walk
-  end
-
-  def start_coordinates
-    @turtle.current_position
-  end
-
+class DownPositioner < Positioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row + 1
   end
 
   def positions_to_cover
     (start_position..start_coordinates.row + @steps_to_walk)
-  end
-end
-
-class Down < TurtleMovement
-  def initialize(turtle, steps_to_walk)
-    super(turtle, steps_to_walk)
-    @positioner = DownPositioner.new(turtle, steps_to_walk)
-  end
-
-  def coordinates_to_cover
-    @positioner.positions_to_cover.map { |row| GridCoordinates.new(row, @positioner.start_coordinates.column) }
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row + @steps_to_walk, position.column)
   end
 end
