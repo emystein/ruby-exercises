@@ -111,7 +111,7 @@ class TurtleMovement
 
   def on(matrix_to_walk)
     traveled = @positioner.coordinates.map { |position| matrix_to_walk.value_at(position) }
-                                      .reject(&:nil?)
+                          .reject(&:nil?)
 
     @turtle.update_position(self)
 
@@ -185,7 +185,15 @@ class Positioner
     raise NotImplementedError, 'Implement this'
   end
 
+  def offset_start
+    raise NotImplementedError, 'Implement this'
+  end
+
   def coordinates
+    positions_to_cover.map { |row| new_coordinate(row) }
+  end
+
+  def new_coordinate(position)
     raise NotImplementedError, 'Implement this'
   end
 
@@ -198,70 +206,83 @@ class Positioner
   end
 end
 
+module IncrementalRange
+  def positions_to_cover
+    (start_position..end_position)
+  end
+
+  def with_offset(start, steps)
+    start + steps
+  end
+end
+
+module DecrementalRange
+  def positions_to_cover
+    start_position.downto(end_position)
+  end
+
+  def with_offset(start, steps)
+    start - steps
+  end
+end
+
 class HorizontalPositioner < Positioner
-  def coordinates
-    positions_to_cover.map { |column| GridCoordinates.new(start_coordinates.row, column) }
+  def start_position
+    @turtle.at_initial_position? ? start_coordinates.column : offset_start
+  end
+
+  def offset_start
+    with_offset(start_coordinates.column, 1)
+  end
+
+  def new_coordinate(position)
+    GridCoordinates.new(start_coordinates.row, position)
   end
 end
 
 class VerticalPositioner < Positioner
-  def coordinates
-    positions_to_cover.map { |row| GridCoordinates.new(row, start_coordinates.column) }
+  def start_position
+    @turtle.at_initial_position? ? start_coordinates.row : offset_start
+  end
+
+  def offset_start
+    with_offset(start_coordinates.row, 1)
+  end
+
+  def new_coordinate(position)
+    GridCoordinates.new(position, start_coordinates.column)
   end
 end
 
 class LeftPositioner < HorizontalPositioner
-  def start_position
-    @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column - 1
-  end
+  include DecrementalRange
 
   def end_position
     start_coordinates.column - @steps_to_walk
   end
-
-  def positions_to_cover
-    decremental_range
-  end
 end
 
 class RightPositioner < HorizontalPositioner
-  def start_position
-    @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column + 1
-  end
+  include IncrementalRange
 
   def end_position
-    start_position + @steps_to_walk
-  end
-
-  def positions_to_cover
-    incremental_range
+    start_coordinates.column + @steps_to_walk
   end
 end
 
 class UpPositioner < VerticalPositioner
-  def start_position
-    @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row - 1
-  end
+  include DecrementalRange
 
   def end_position
     start_coordinates.row - @steps_to_walk
   end
-
-  def positions_to_cover
-    decremental_range
-  end
 end
 
 class DownPositioner < VerticalPositioner
-  def start_position
-    @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row + 1
-  end
+  include IncrementalRange
 
   def end_position
     start_coordinates.row + @steps_to_walk
   end
-
-  def positions_to_cover
-    incremental_range
-  end
 end
+
