@@ -25,7 +25,7 @@ describe 'Move left' do
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new
+      itinerary = Itinerary.new(@turtle)
 
       (1..iterations).each do
         itinerary.left(steps)
@@ -63,7 +63,7 @@ describe 'Move right' do
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following route' do
-      itinerary = Itinerary.new
+      itinerary = Itinerary.new(@turtle)
 
       (1..iterations).each do
         itinerary.right(steps)
@@ -99,7 +99,7 @@ describe 'Move up' do
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new
+      itinerary = Itinerary.new(@turtle)
 
       (1..iterations).each do
         itinerary.up(steps)
@@ -136,7 +136,7 @@ describe 'Move down' do
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new
+      itinerary = Itinerary.new(@turtle)
 
       (1..iterations).each do
         itinerary.down(steps)
@@ -170,7 +170,7 @@ describe 'Move clocwise starting at the top left' do
       expect(@turtle.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new
+      itinerary = Itinerary.new(@turtle)
       itinerary.right(steps)
       itinerary.down(steps)
       itinerary.left(steps)

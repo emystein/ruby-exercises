@@ -16,24 +16,28 @@ class Turtle
     @traveled_path = []
   end
 
+  def left(number_of_steps)
+    positioner = LeftPositioner.new(self, number_of_steps)
+    move(Left, positioner, number_of_steps)
+  end
+
   def right(number_of_steps)
-    move(Right, number_of_steps)
+    positioner = RightPositioner.new(self, number_of_steps)
+    move(Right, positioner, number_of_steps)
   end
 
   def up(number_of_steps)
-    move(Up, number_of_steps)
+    positioner = UpPositioner.new(self, number_of_steps)
+    move(Up, positioner, number_of_steps)
   end
 
   def down(number_of_steps)
-    move(Down, number_of_steps)
+    positioner = DownPositioner.new(self, number_of_steps)
+    move(Down, positioner, number_of_steps)
   end
 
-  def left(number_of_steps)
-    move(Left, number_of_steps)
-  end
-
-  def move(movement_class, number_of_steps)
-    movement = movement_class.new(self, number_of_steps)
+  def move(movement_class, coordinates, number_of_steps)
+    movement = movement_class.new(self, coordinates, number_of_steps)
     @traveled_path << movement.on(@matrix_to_walk)
   end
 
@@ -55,28 +59,33 @@ class Turtle
 end
 
 class Itinerary
-  def initialize
+  def initialize(turtle)
+    @turtle = turtle
     @tracts = []
   end
 
+  def left(number_of_steps)
+    positioner = LeftPositioner.new(@turtle, number_of_steps)
+    add_tract(Left, positioner, number_of_steps)
+  end
+
   def right(number_of_steps)
-    add_tract(Right, number_of_steps)
+    positioner = RightPositioner.new(@turtle, number_of_steps)
+    add_tract(Right, positioner, number_of_steps)
   end
 
   def up(number_of_steps)
-    add_tract(Up, number_of_steps)
+    positioner = UpPositioner.new(@turtle, number_of_steps)
+    add_tract(Up, positioner, number_of_steps)
   end
 
   def down(number_of_steps)
-    add_tract(Down, number_of_steps)
+    positioner = DownPositioner.new(@turtle, number_of_steps)
+    add_tract(Down, positioner, number_of_steps)
   end
 
-  def left(number_of_steps)
-    add_tract(Left, number_of_steps)
-  end
-
-  def add_tract(klass, steps_to_walk)
-    @tracts << ItineraryTract.new(klass, steps_to_walk)
+  def add_tract(klass, positioner, steps_to_walk)
+    @tracts << ItineraryTract.new(klass, self, positioner, steps_to_walk)
   end
 
   def traverse(matrix_to_walk, turtle)
@@ -88,31 +97,30 @@ end
 class ItineraryTract
   attr_reader :movement_class, :steps_to_walk
 
-  def initialize(movement_class, steps_to_walk)
+  def initialize(movement_class, turtle, positioner, steps_to_walk)
     @movement_class = movement_class
+    @turtle = turtle
+    @positioner = positioner
     @steps_to_walk = steps_to_walk
   end
 
   def prepare(turtle)
-    @movement_class.new(turtle, @steps_to_walk)
+    @movement_class.new(turtle, @positioner, @steps_to_walk)
   end
 end
 
 class TurtleMovement
   attr_reader :steps_to_walk
 
-  def initialize(turtle_to_move, steps_to_walk)
+  def initialize(turtle_to_move, positioner, steps_to_walk)
     @turtle = turtle_to_move
+    @positioner = positioner
     @steps_to_walk = steps_to_walk
   end
 
-  def coordinates_to_cover
-    raise NotImplementedError, 'Implement this'
-  end
-
   def on(matrix_to_walk)
-    traveled = coordinates_to_cover.map { |position| matrix_to_walk.value_at(position) }
-                                   .reject(&:nil?)
+    traveled = @positioner.coordinates.map { |position| matrix_to_walk.value_at(position) }
+                                      .reject(&:nil?)
 
     @turtle.update_position(self)
 
@@ -120,83 +128,25 @@ class TurtleMovement
   end
 end
 
-class Coordinates
-  def initialize(positioner)
-    @positioner = positioner
-  end
-end
-
-class HorizontalCoordinates < Coordinates
-  def coordinates
-    @positioner.positions_to_cover.map { |column| GridCoordinates.new(@positioner.start_coordinates.row, column) }
-  end
-end
-
-class VerticalCoordinates < Coordinates
-  def coordinates
-    @positioner.positions_to_cover.map { |row| GridCoordinates.new(row, @positioner.start_coordinates.column) }
-  end
-end
-
 class Left < TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk)
-    positioner = LeftPositioner.new(turtle_to_move, steps_to_walk)
-    @coordinates = HorizontalCoordinates.new(positioner)
-  end
-
-  def coordinates_to_cover
-    @coordinates.coordinates
-  end
-
   def from(position)
     GridCoordinates.new(position.row, position.column - @steps_to_walk)
   end
 end
 
 class Right < TurtleMovement
-  def initialize(turtle, steps_to_walk)
-    super(turtle, steps_to_walk)
-    positioner = RightPositioner.new(turtle, steps_to_walk)
-    @coordinates = HorizontalCoordinates.new(positioner)
-  end
-
-  def coordinates_to_cover
-    @coordinates.coordinates
-  end
-
   def from(position)
     GridCoordinates.new(position.row, position.column + @steps_to_walk)
   end
 end
 
 class Up < TurtleMovement
-  def initialize(turtle, steps_to_walk)
-    super(turtle, steps_to_walk)
-    positioner = UpPositioner.new(turtle, steps_to_walk)
-    @coordinates = VerticalCoordinates.new(positioner)
-  end
-
-  def coordinates_to_cover
-    @coordinates.coordinates
-  end
-
   def from(position)
     GridCoordinates.new(position.row - @steps_to_walk, position.column)
   end
 end
 
 class Down < TurtleMovement
-  def initialize(turtle, steps_to_walk)
-    super(turtle, steps_to_walk)
-    positioner = DownPositioner.new(turtle, steps_to_walk)
-    @coordinates = VerticalCoordinates.new(positioner)
-  end
-
-  def coordinates_to_cover
-    @coordinates.coordinates
-  end
-
   def from(position)
     GridCoordinates.new(position.row + @steps_to_walk, position.column)
   end
@@ -219,9 +169,25 @@ class Positioner
   def positions_to_cover
     raise NotImplementedError, 'Implement this'
   end
+
+  def coordinates
+    raise NotImplementedError, 'Implement this'
+  end
 end
 
-class LeftPositioner < Positioner
+class HorizontalPositioner < Positioner
+  def coordinates
+    positions_to_cover.map { |column| GridCoordinates.new(start_coordinates.row, column) }
+  end
+end
+
+class VerticalPositioner < Positioner
+  def coordinates
+    positions_to_cover.map { |row| GridCoordinates.new(row, start_coordinates.column) }
+  end
+end
+
+class LeftPositioner < HorizontalPositioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column - 1
   end
@@ -231,7 +197,7 @@ class LeftPositioner < Positioner
   end
 end
 
-class RightPositioner < Positioner
+class RightPositioner < HorizontalPositioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column + 1
   end
@@ -241,7 +207,7 @@ class RightPositioner < Positioner
   end
 end
 
-class UpPositioner < Positioner
+class UpPositioner < VerticalPositioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row - 1
   end
@@ -251,7 +217,7 @@ class UpPositioner < Positioner
   end
 end
 
-class DownPositioner < Positioner
+class DownPositioner < VerticalPositioner
   def start_position
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row + 1
   end
