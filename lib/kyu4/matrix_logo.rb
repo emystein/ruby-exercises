@@ -162,7 +162,16 @@ class Left < TurtleMovement
   end
 end
 
-class Right < TurtleMovement
+class RightPositioner
+  def initialize(turtle, steps_to_walk)
+    @turtle = turtle
+    @steps_to_walk = steps_to_walk
+  end
+
+  def start_coordinates
+    @turtle.current_position
+  end
+
   def start_position
     @turtle.at_initial_position? ? start_coordinates.column : start_coordinates.column + 1
   end
@@ -170,9 +179,16 @@ class Right < TurtleMovement
   def positions_to_cover
     (start_position..start_position + @steps_to_walk)
   end
+end
+
+class Right < TurtleMovement
+  def initialize(turtle, steps_to_walk)
+    super(turtle, steps_to_walk)
+    @positioner = RightPositioner.new(turtle, steps_to_walk)
+  end
 
   def coordinates_to_cover
-    positions_to_cover.map { |column| GridCoordinates.new(start_coordinates.row, column) }
+    @positioner.positions_to_cover.map { |column| GridCoordinates.new(@positioner.start_coordinates.row, column) }
   end
 
   def from(position)
