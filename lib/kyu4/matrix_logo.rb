@@ -17,27 +17,23 @@ class Turtle
   end
 
   def left(number_of_steps)
-    positioner = LeftPositioner.new(self, number_of_steps)
-    move(Left, positioner, number_of_steps)
+    move(Left, number_of_steps)
   end
 
   def right(number_of_steps)
-    positioner = RightPositioner.new(self, number_of_steps)
-    move(Right, positioner, number_of_steps)
+    move(Right, number_of_steps)
   end
 
   def up(number_of_steps)
-    positioner = UpPositioner.new(self, number_of_steps)
-    move(Up, positioner, number_of_steps)
+    move(Up, number_of_steps)
   end
 
   def down(number_of_steps)
-    positioner = DownPositioner.new(self, number_of_steps)
-    move(Down, positioner, number_of_steps)
+    move(Down, number_of_steps)
   end
 
-  def move(movement_class, coordinates, number_of_steps)
-    movement = movement_class.new(self, coordinates, number_of_steps)
+  def move(movement_class, number_of_steps)
+    movement = movement_class.create(self, number_of_steps)
     @traveled_path << movement.on(@matrix_to_walk)
   end
 
@@ -65,27 +61,23 @@ class Itinerary
   end
 
   def left(number_of_steps)
-    positioner = LeftPositioner.new(@turtle, number_of_steps)
-    add_tract(Left, positioner, number_of_steps)
+    add_tract(Left, number_of_steps)
   end
 
   def right(number_of_steps)
-    positioner = RightPositioner.new(@turtle, number_of_steps)
-    add_tract(Right, positioner, number_of_steps)
+    add_tract(Right, number_of_steps)
   end
 
   def up(number_of_steps)
-    positioner = UpPositioner.new(@turtle, number_of_steps)
-    add_tract(Up, positioner, number_of_steps)
+    add_tract(Up, number_of_steps)
   end
 
   def down(number_of_steps)
-    positioner = DownPositioner.new(@turtle, number_of_steps)
-    add_tract(Down, positioner, number_of_steps)
+    add_tract(Down, number_of_steps)
   end
 
-  def add_tract(klass, positioner, steps_to_walk)
-    @tracts << ItineraryTract.new(klass, self, positioner, steps_to_walk)
+  def add_tract(klass, steps_to_walk)
+    @tracts << ItineraryTract.new(klass, self, steps_to_walk)
   end
 
   def traverse(matrix_to_walk, turtle)
@@ -97,15 +89,14 @@ end
 class ItineraryTract
   attr_reader :movement_class, :steps_to_walk
 
-  def initialize(movement_class, turtle, positioner, steps_to_walk)
+  def initialize(movement_class, turtle, steps_to_walk)
     @movement_class = movement_class
     @turtle = turtle
-    @positioner = positioner
     @steps_to_walk = steps_to_walk
   end
 
   def prepare(turtle)
-    @movement_class.new(turtle, @positioner, @steps_to_walk)
+    @movement_class.create(turtle, @steps_to_walk)
   end
 end
 
@@ -129,24 +120,44 @@ class TurtleMovement
 end
 
 class Left < TurtleMovement
+  def self.create(turtle_to_move, steps_to_walk)
+    positioner = LeftPositioner.new(turtle_to_move, steps_to_walk)
+    Left.new(turtle_to_move, positioner, steps_to_walk)
+  end
+
   def from(position)
     GridCoordinates.new(position.row, position.column - @steps_to_walk)
   end
 end
 
 class Right < TurtleMovement
+  def self.create(turtle_to_move, steps_to_walk)
+    positioner = RightPositioner.new(turtle_to_move, steps_to_walk)
+    Right.new(turtle_to_move, positioner, steps_to_walk)
+  end
+
   def from(position)
     GridCoordinates.new(position.row, position.column + @steps_to_walk)
   end
 end
 
 class Up < TurtleMovement
+  def self.create(turtle_to_move, steps_to_walk)
+    positioner = UpPositioner.new(turtle_to_move, steps_to_walk)
+    Up.new(turtle_to_move, positioner, steps_to_walk)
+  end
+
   def from(position)
     GridCoordinates.new(position.row - @steps_to_walk, position.column)
   end
 end
 
 class Down < TurtleMovement
+  def self.create(turtle_to_move, steps_to_walk)
+    positioner = DownPositioner.new(turtle_to_move, steps_to_walk)
+    Down.new(turtle_to_move, positioner, steps_to_walk)
+  end
+
   def from(position)
     GridCoordinates.new(position.row + @steps_to_walk, position.column)
   end
