@@ -17,11 +17,11 @@ class Turtle
   end
 
   def current_row
-    @current_position.current_row
+    @current_position.row
   end
 
   def current_column
-    @current_position.current_column
+    @current_position.column
   end
 
   def left(number_of_steps)
@@ -127,49 +127,49 @@ end
 
 class Left < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = LeftPositioner.new(turtle_to_move, steps_to_walk)
+    positioner = HorizontalPositioner.new(turtle_to_move, steps_to_walk, DescendingInterval.new)
     Left.new(turtle_to_move, positioner, steps_to_walk)
   end
 
   def from(position)
-    GridCoordinates.new(position.current_row, position.current_column - @steps_to_walk)
+    GridCoordinates.new(position.row, position.column - @steps_to_walk)
   end
 end
 
 class Right < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = RightPositioner.new(turtle_to_move, steps_to_walk)
+    positioner = HorizontalPositioner.new(turtle_to_move, steps_to_walk, AscendingInterval.new)
     Right.new(turtle_to_move, positioner, steps_to_walk)
   end
 
   def from(position)
-    GridCoordinates.new(position.current_row, position.current_column + @steps_to_walk)
+    GridCoordinates.new(position.row, position.column + @steps_to_walk)
   end
 end
 
 class Up < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = UpPositioner.new(turtle_to_move, steps_to_walk)
+    positioner = VerticalPositioner.new(turtle_to_move, steps_to_walk, DescendingInterval.new)
     Up.new(turtle_to_move, positioner, steps_to_walk)
   end
 
   def from(position)
-    GridCoordinates.new(position.current_row - @steps_to_walk, position.current_column)
+    GridCoordinates.new(position.row - @steps_to_walk, position.column)
   end
 end
 
 class Down < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = DownPositioner.new(turtle_to_move, steps_to_walk)
+    positioner = VerticalPositioner.new(turtle_to_move, steps_to_walk, AscendingInterval.new)
     Down.new(turtle_to_move, positioner, steps_to_walk)
   end
 
   def from(position)
-    GridCoordinates.new(position.current_row + @steps_to_walk, position.current_column)
+    GridCoordinates.new(position.row + @steps_to_walk, position.column)
   end
 end
 
-module AscendingInterval
+class AscendingInterval
   def elements(start_position, end_position)
     (start_position..end_position)
   end
@@ -179,7 +179,7 @@ module AscendingInterval
   end
 end
 
-module DescendingInterval
+class DescendingInterval
   def elements(start_position, end_position)
     start_position.downto(end_position)
   end
@@ -189,23 +189,38 @@ module DescendingInterval
   end
 end
 
+class MovablePosition
+  def initialize(start, interval)
+    @start = start
+    @interval = interval
+  end
+
+  def with_offset(offset)
+    @interval.position_with_offset(@start, offset)
+  end
+
+  def -(other)
+    @start - other
+  end
+end
 
 class Positioner
-  def initialize(turtle, steps_to_walk)
+  def initialize(turtle, steps_to_walk, interval)
     @turtle = turtle
     @steps_to_walk = steps_to_walk
+    @interval = interval
   end
 
   def current_row
-    @turtle.current_row
+    MovablePosition.new(@turtle.current_row, @interval)
   end
 
   def current_column
-    @turtle.current_column
+    MovablePosition.new(@turtle.current_column, @interval)
   end
 
   def coordinates
-    elements(start_position, end_position).map { |row| new_coordinate(row) }
+    @interval.elements(start_position, end_position).map { |row| new_coordinate(row) }
   end
 
   def start_position
@@ -218,7 +233,7 @@ class Positioner
   end
 
   def start_position_with_offset(offset)
-    position_with_offset(movable_position_at_start, offset)
+    movable_position_at_start.with_offset(offset)
   end
 
   def movable_position_at_start
@@ -250,18 +265,3 @@ class VerticalPositioner < Positioner
   end
 end
 
-class LeftPositioner < HorizontalPositioner
-  include DescendingInterval
-end
-
-class RightPositioner < HorizontalPositioner
-  include AscendingInterval
-end
-
-class UpPositioner < VerticalPositioner
-  include DescendingInterval
-end
-
-class DownPositioner < VerticalPositioner
-  include AscendingInterval
-end
