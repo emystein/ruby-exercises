@@ -16,6 +16,14 @@ class Turtle
     @traveled_path = []
   end
 
+  def current_row
+    @current_position.current_row
+  end
+
+  def current_column
+    @current_position.current_column
+  end
+
   def left(number_of_steps)
     move(Left, number_of_steps)
   end
@@ -124,7 +132,7 @@ class Left < TurtleMovement
   end
 
   def from(position)
-    GridCoordinates.new(position.row, position.column - @steps_to_walk)
+    GridCoordinates.new(position.current_row, position.current_column - @steps_to_walk)
   end
 end
 
@@ -135,7 +143,7 @@ class Right < TurtleMovement
   end
 
   def from(position)
-    GridCoordinates.new(position.row, position.column + @steps_to_walk)
+    GridCoordinates.new(position.current_row, position.current_column + @steps_to_walk)
   end
 end
 
@@ -146,7 +154,7 @@ class Up < TurtleMovement
   end
 
   def from(position)
-    GridCoordinates.new(position.row - @steps_to_walk, position.column)
+    GridCoordinates.new(position.current_row - @steps_to_walk, position.current_column)
   end
 end
 
@@ -157,7 +165,7 @@ class Down < TurtleMovement
   end
 
   def from(position)
-    GridCoordinates.new(position.row + @steps_to_walk, position.column)
+    GridCoordinates.new(position.current_row + @steps_to_walk, position.current_column)
   end
 end
 
@@ -188,31 +196,22 @@ class Positioner
     @steps_to_walk = steps_to_walk
   end
 
-  def start_coordinates
-    @turtle.current_position
+  def current_row
+    @turtle.current_row
+  end
+
+  def current_column
+    @turtle.current_column
   end
 
   def coordinates
     elements(start_position, end_position).map { |row| new_coordinate(row) }
   end
 
-  def new_coordinate(position)
-    raise NotImplementedError, 'Implement this'
-  end
-
-  # begin start positioner
   def start_position
-    @turtle.at_initial_position? ? movable_position_at_start : offset_start
+    offset = @turtle.at_initial_position? ? 0 : 1
+    start_position_with_offset(offset)
   end
-
-  def movable_position_at_start
-    raise NotImplementedError, 'Implement this'
-  end
-
-  def offset_start
-    start_position_with_offset(1)
-  end
-  # end start positioner
 
   def end_position
     start_position_with_offset(@steps_to_walk)
@@ -221,25 +220,33 @@ class Positioner
   def start_position_with_offset(offset)
     position_with_offset(movable_position_at_start, offset)
   end
+
+  def movable_position_at_start
+    raise NotImplementedError, 'Implement this'
+  end
+
+  def new_coordinate(position)
+    raise NotImplementedError, 'Implement this'
+  end
 end
 
 class HorizontalPositioner < Positioner
   def movable_position_at_start
-    start_coordinates.column
+    current_column
   end
 
-  def new_coordinate(position)
-    GridCoordinates.new(start_coordinates.row, position)
+  def new_coordinate(column)
+    GridCoordinates.new(current_row, column)
   end
 end
 
 class VerticalPositioner < Positioner
   def movable_position_at_start
-    start_coordinates.row
+    current_row
   end
 
-  def new_coordinate(position)
-    GridCoordinates.new(position, start_coordinates.column)
+  def new_coordinate(row)
+    GridCoordinates.new(row, current_column)
   end
 end
 

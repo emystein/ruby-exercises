@@ -1,5 +1,5 @@
 class GridCoordinates
-  attr_reader :row, :column
+  attr_reader :current_row, :current_column
 
   def initialize(row, column)
     @row = row

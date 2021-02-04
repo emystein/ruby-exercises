@@ -51,7 +51,7 @@ class Matrix
   end
 
   def value_at(position)
-    at_row_column(position.row, position.column)
+    at_row_column(position.current_row, position.current_column)
   end
 
   def at_row_column(row, column)
