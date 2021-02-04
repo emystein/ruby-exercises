@@ -230,7 +230,16 @@ class Up < TurtleMovement
   end
 end
 
-class Down < TurtleMovement
+class DownPositioner
+  def initialize(turtle, steps_to_walk)
+    @turtle = turtle
+    @steps_to_walk = steps_to_walk
+  end
+
+  def start_coordinates
+    @turtle.current_position
+  end
+
   def start_position
     @turtle.at_initial_position? ? start_coordinates.row : start_coordinates.row + 1
   end
@@ -238,9 +247,16 @@ class Down < TurtleMovement
   def positions_to_cover
     (start_position..start_coordinates.row + @steps_to_walk)
   end
+end
+
+class Down < TurtleMovement
+  def initialize(turtle, steps_to_walk)
+    super(turtle, steps_to_walk)
+    @positioner = DownPositioner.new(turtle, steps_to_walk)
+  end
 
   def coordinates_to_cover
-    positions_to_cover.map { |row| GridCoordinates.new(row, start_coordinates.column) }
+    @positioner.positions_to_cover.map { |row| GridCoordinates.new(row, @positioner.start_coordinates.column) }
   end
 
   def from(position)
