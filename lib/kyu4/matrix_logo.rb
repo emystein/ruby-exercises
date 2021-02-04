@@ -114,9 +114,13 @@ class TurtleMovement
     raise NotImplementedError, 'Implement this'
   end
 
+  def coordinates_to_cover
+    raise NotImplementedError, 'Implement this'
+  end
+
   def on(matrix_to_walk)
-    traveled = positions_to_cover.map { |position| matrix_to_walk.value_at(position) }
-                                 .reject(&:nil?)
+    traveled = coordinates_to_cover.map { |position| matrix_to_walk.value_at(position) }
+                                   .reject(&:nil?)
 
     @turtle.update_position(self)
 
@@ -130,9 +134,11 @@ class Left < TurtleMovement
   end
 
   def positions_to_cover
-    start_position.downto(start_coordinates.column - @steps_to_walk).map do |column|
-      GridCoordinates.new(start_coordinates.row, column)
-    end
+    start_position.downto(start_coordinates.column - @steps_to_walk)
+  end
+
+  def coordinates_to_cover
+    positions_to_cover.map { |column| GridCoordinates.new(start_coordinates.row, column) }
   end
 
   def from(position)
@@ -146,9 +152,11 @@ class Right < TurtleMovement
   end
 
   def positions_to_cover
-    (start_position..start_position + @steps_to_walk).map do |column|
-      GridCoordinates.new(start_coordinates.row, column)
-    end
+    (start_position..start_position + @steps_to_walk)
+  end
+
+  def coordinates_to_cover
+    positions_to_cover.map { |column| GridCoordinates.new(start_coordinates.row, column) }
   end
 
   def from(position)
@@ -162,9 +170,11 @@ class Up < TurtleMovement
   end
 
   def positions_to_cover
-    start_position.downto(start_coordinates.row - @steps_to_walk).map do |row|
-      GridCoordinates.new(row, start_coordinates.column)
-    end
+    start_position.downto(start_coordinates.row - @steps_to_walk)
+  end
+
+  def coordinates_to_cover
+    positions_to_cover.map { |row| GridCoordinates.new(row, start_coordinates.column) }
   end
 
   def from(position)
@@ -178,9 +188,11 @@ class Down < TurtleMovement
   end
 
   def positions_to_cover
-    (start_position..start_coordinates.row + @steps_to_walk).map do |row|
-      GridCoordinates.new(row, start_coordinates.column)
-    end
+    (start_position..start_coordinates.row + @steps_to_walk)
+  end
+
+  def coordinates_to_cover
+    positions_to_cover.map { |row| GridCoordinates.new(row, start_coordinates.column) }
   end
 
   def from(position)
