@@ -101,8 +101,6 @@ class ItineraryTract
 end
 
 class TurtleMovement
-  attr_reader :steps_to_walk
-
   def initialize(turtle_to_move, positioner, steps_to_walk)
     @turtle = turtle_to_move
     @positioner = positioner
@@ -163,6 +161,27 @@ class Down < TurtleMovement
   end
 end
 
+module AscendingInterval
+  def elements(start_position, end_position)
+    (start_position..end_position)
+  end
+
+  def position_with_offset(start, steps)
+    start + steps
+  end
+end
+
+module DescendingInterval
+  def elements(start_position, end_position)
+    start_position.downto(end_position)
+  end
+
+  def position_with_offset(start, steps)
+    start - steps
+  end
+end
+
+
 class Positioner
   def initialize(turtle, steps_to_walk)
     @turtle = turtle
@@ -173,66 +192,40 @@ class Positioner
     @turtle.current_position
   end
 
-  def start_position
-    raise NotImplementedError, 'Implement this'
-  end
-
-  def end_position
-    raise NotImplementedError, 'Implement this'
-  end
-
-  def positions_to_cover
-    raise NotImplementedError, 'Implement this'
-  end
-
-  def offset_start
-    raise NotImplementedError, 'Implement this'
-  end
-
   def coordinates
-    positions_to_cover.map { |row| new_coordinate(row) }
+    elements(start_position, end_position).map { |row| new_coordinate(row) }
   end
 
   def new_coordinate(position)
     raise NotImplementedError, 'Implement this'
   end
 
-  def incremental_range
-    (start_position..end_position)
+  # begin start positioner
+  def start_position
+    @turtle.at_initial_position? ? movable_position_at_start : offset_start
   end
 
-  def decremental_range
-    start_position.downto(end_position)
-  end
-end
-
-module IncrementalRange
-  def positions_to_cover
-    (start_position..end_position)
+  def movable_position_at_start
+    raise NotImplementedError, 'Implement this'
   end
 
-  def with_offset(start, steps)
-    start + steps
+  def offset_start
+    start_position_with_offset(1)
   end
-end
+  # end start positioner
 
-module DecrementalRange
-  def positions_to_cover
-    start_position.downto(end_position)
+  def end_position
+    start_position_with_offset(@steps_to_walk)
   end
 
-  def with_offset(start, steps)
-    start - steps
+  def start_position_with_offset(offset)
+    position_with_offset(movable_position_at_start, offset)
   end
 end
 
 class HorizontalPositioner < Positioner
-  def start_position
-    @turtle.at_initial_position? ? start_coordinates.column : offset_start
-  end
-
-  def offset_start
-    with_offset(start_coordinates.column, 1)
+  def movable_position_at_start
+    start_coordinates.column
   end
 
   def new_coordinate(position)
@@ -241,12 +234,8 @@ class HorizontalPositioner < Positioner
 end
 
 class VerticalPositioner < Positioner
-  def start_position
-    @turtle.at_initial_position? ? start_coordinates.row : offset_start
-  end
-
-  def offset_start
-    with_offset(start_coordinates.row, 1)
+  def movable_position_at_start
+    start_coordinates.row
   end
 
   def new_coordinate(position)
@@ -255,34 +244,17 @@ class VerticalPositioner < Positioner
 end
 
 class LeftPositioner < HorizontalPositioner
-  include DecrementalRange
-
-  def end_position
-    start_coordinates.column - @steps_to_walk
-  end
+  include DescendingInterval
 end
 
 class RightPositioner < HorizontalPositioner
-  include IncrementalRange
-
-  def end_position
-    start_coordinates.column + @steps_to_walk
-  end
+  include AscendingInterval
 end
 
 class UpPositioner < VerticalPositioner
-  include DecrementalRange
-
-  def end_position
-    start_coordinates.row - @steps_to_walk
-  end
+  include DescendingInterval
 end
 
 class DownPositioner < VerticalPositioner
-  include IncrementalRange
-
-  def end_position
-    start_coordinates.row + @steps_to_walk
-  end
+  include AscendingInterval
 end
-
