@@ -204,23 +204,14 @@ class MovablePosition
   end
 end
 
-class Positioner
-  def initialize(turtle, steps_to_walk, interval)
+# TODO complete usage in Positioner
+class Boundaries
+  attr_reader :movable_position
+
+  def initialize(turtle, steps_to_walk, movable_position)
     @turtle = turtle
     @steps_to_walk = steps_to_walk
-    @interval = interval
-  end
-
-  def current_row
-    MovablePosition.new(@turtle.current_row, @interval)
-  end
-
-  def current_column
-    MovablePosition.new(@turtle.current_column, @interval)
-  end
-
-  def coordinates
-    @interval.elements(start_position, end_position).map { |row| new_coordinate(row) }
+    @movable_position = movable_position
   end
 
   def start_position
@@ -236,9 +227,48 @@ class Positioner
   end
 
   def start_position_with_offset(offset)
-    movable_position.with_offset(offset)
+    @movable_position.with_offset(offset)
+  end
+end
+
+class CurrentPosition
+  def initialize(turtle, interval)
+    @turtle = turtle
+    @interval = interval
   end
 
+  def row
+    current_row
+  end
+
+  def current_row
+    MovablePosition.new(@turtle.current_row, @interval)
+  end
+
+  def column
+    current_column
+  end
+
+  def current_column
+    MovablePosition.new(@turtle.current_column, @interval)
+  end
+end
+
+class Positioner
+  def initialize(turtle, steps_to_walk, interval)
+    @turtle = turtle
+    @steps_to_walk = steps_to_walk
+    @interval = interval
+    @current_position = CurrentPosition.new(turtle, interval)
+  end
+
+  def coordinates
+    boundaries = Boundaries.new(@turtle, @steps_to_walk, movable_position)
+
+    @interval.elements(boundaries.start_position, boundaries.end_position).map { |row| new_coordinate(row) }
+  end
+
+  # TODO break the inheritance between Positioner and HorizontalPositioner, VerticalPositioner
   def movable_position
     raise NotImplementedError, 'Implement this'
   end
@@ -250,20 +280,20 @@ end
 
 class HorizontalPositioner < Positioner
   def movable_position
-    current_column
+    @current_position.column
   end
 
   def new_coordinate(column)
-    GridCoordinates.new(current_row, column)
+    GridCoordinates.new(@current_position.row, column)
   end
 end
 
 class VerticalPositioner < Positioner
   def movable_position
-    current_row
+    @current_position.row
   end
 
   def new_coordinate(row)
-    GridCoordinates.new(row, current_column)
+    GridCoordinates.new(row, @current_position.column)
   end
 end
