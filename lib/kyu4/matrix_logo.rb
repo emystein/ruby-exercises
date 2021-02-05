@@ -213,8 +213,6 @@ class MovablePosition
 end
 
 class Boundaries
-  attr_reader :movable_position
-
   def initialize(turtle, steps_to_walk, movable_position)
     @turtle = turtle
     @steps_to_walk = steps_to_walk
@@ -259,20 +257,34 @@ class Positioner
     @steps_to_walk = steps_to_walk
     @interval = interval
     @axis_positioner = axis_positioner
+    # TODO define boundaries here
+    # @boundaries = Boundaries.new(@turtle, @steps_to_walk, @axis_positioner.movable_position)
   end
 
   def coordinates
     boundaries = Boundaries.new(@turtle, @steps_to_walk, @axis_positioner.movable_position)
 
-    @interval.elements(boundaries.start_position, boundaries.end_position).map { |row| @axis_positioner.new_coordinate(row) }
+    @interval.elements(boundaries.start_position, boundaries.end_position).map do |row|
+      @axis_positioner.new_coordinate(row)
+    end
   end
 end
 
-class HorizontalPositioner
+class AxisPositioner
   def initialize(current_position)
     @current_position = current_position
   end
 
+  def movable_position
+    raise NotImplementedError, 'Implement this'
+  end
+
+  def new_coordinate(position)
+    raise NotImplementedError, 'Implement this'
+  end
+end
+
+class HorizontalPositioner < AxisPositioner
   def movable_position
     @current_position.column
   end
@@ -282,11 +294,7 @@ class HorizontalPositioner
   end
 end
 
-class VerticalPositioner
-  def initialize(current_position)
-    @current_position = current_position
-  end
-
+class VerticalPositioner < AxisPositioner
   def movable_position
     @current_position.row
   end
