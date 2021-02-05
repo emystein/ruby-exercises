@@ -127,7 +127,9 @@ end
 
 class Left < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = HorizontalPositioner.new(turtle_to_move, steps_to_walk, DescendingInterval.new)
+    interval = DescendingInterval.new
+    current_position = CurrentPosition.new(turtle_to_move, interval)
+    positioner = Positioner.new(turtle_to_move, steps_to_walk, interval, HorizontalPositioner.new(current_position))
     Left.new(turtle_to_move, positioner, steps_to_walk)
   end
 
@@ -138,7 +140,9 @@ end
 
 class Right < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = HorizontalPositioner.new(turtle_to_move, steps_to_walk, AscendingInterval.new)
+    interval = AscendingInterval.new
+    current_position = CurrentPosition.new(turtle_to_move, interval)
+    positioner = Positioner.new(turtle_to_move, steps_to_walk, interval, HorizontalPositioner.new(current_position))
     Right.new(turtle_to_move, positioner, steps_to_walk)
   end
 
@@ -149,7 +153,9 @@ end
 
 class Up < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = VerticalPositioner.new(turtle_to_move, steps_to_walk, DescendingInterval.new)
+    interval = DescendingInterval.new
+    current_position = CurrentPosition.new(turtle_to_move, interval)
+    positioner = Positioner.new(turtle_to_move, steps_to_walk, interval, VerticalPositioner.new(current_position))
     Up.new(turtle_to_move, positioner, steps_to_walk)
   end
 
@@ -160,7 +166,9 @@ end
 
 class Down < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    positioner = VerticalPositioner.new(turtle_to_move, steps_to_walk, AscendingInterval.new)
+    interval = AscendingInterval.new
+    current_position = CurrentPosition.new(turtle_to_move, interval)
+    positioner = Positioner.new(turtle_to_move, steps_to_walk, interval, VerticalPositioner.new(current_position))
     Down.new(turtle_to_move, positioner, steps_to_walk)
   end
 
@@ -204,7 +212,6 @@ class MovablePosition
   end
 end
 
-# TODO complete usage in Positioner
 class Boundaries
   attr_reader :movable_position
 
@@ -255,30 +262,25 @@ class CurrentPosition
 end
 
 class Positioner
-  def initialize(turtle, steps_to_walk, interval)
+  def initialize(turtle, steps_to_walk, interval, axis_positioner)
     @turtle = turtle
     @steps_to_walk = steps_to_walk
     @interval = interval
-    @current_position = CurrentPosition.new(turtle, interval)
+    @axis_positioner = axis_positioner
   end
 
   def coordinates
-    boundaries = Boundaries.new(@turtle, @steps_to_walk, movable_position)
+    boundaries = Boundaries.new(@turtle, @steps_to_walk, @axis_positioner.movable_position)
 
-    @interval.elements(boundaries.start_position, boundaries.end_position).map { |row| new_coordinate(row) }
-  end
-
-  # TODO break the inheritance between Positioner and HorizontalPositioner, VerticalPositioner
-  def movable_position
-    raise NotImplementedError, 'Implement this'
-  end
-
-  def new_coordinate(position)
-    raise NotImplementedError, 'Implement this'
+    @interval.elements(boundaries.start_position, boundaries.end_position).map { |row| @axis_positioner.new_coordinate(row) }
   end
 end
 
-class HorizontalPositioner < Positioner
+class HorizontalPositioner
+  def initialize(current_position)
+    @current_position = current_position
+  end
+
   def movable_position
     @current_position.column
   end
@@ -288,7 +290,11 @@ class HorizontalPositioner < Positioner
   end
 end
 
-class VerticalPositioner < Positioner
+class VerticalPositioner
+  def initialize(current_position)
+    @current_position = current_position
+  end
+
   def movable_position
     @current_position.row
   end
