@@ -236,10 +236,10 @@ class Positioner
   end
 
   def start_position_with_offset(offset)
-    movable_position_at_start.with_offset(offset)
+    movable_position.with_offset(offset)
   end
 
-  def movable_position_at_start
+  def movable_position
     raise NotImplementedError, 'Implement this'
   end
 
@@ -249,7 +249,7 @@ class Positioner
 end
 
 class HorizontalPositioner < Positioner
-  def movable_position_at_start
+  def movable_position
     current_column
   end
 
@@ -259,7 +259,7 @@ class HorizontalPositioner < Positioner
 end
 
 class VerticalPositioner < Positioner
-  def movable_position_at_start
+  def movable_position
     current_row
   end
 
