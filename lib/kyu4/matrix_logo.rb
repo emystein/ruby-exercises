@@ -245,18 +245,10 @@ class CurrentPosition
   end
 
   def row
-    current_row
-  end
-
-  def current_row
     MovablePosition.new(@turtle.current_row, @interval)
   end
 
   def column
-    current_column
-  end
-
-  def current_column
     MovablePosition.new(@turtle.current_column, @interval)
   end
 end
