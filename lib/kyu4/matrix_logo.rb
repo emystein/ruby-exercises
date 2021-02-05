@@ -177,41 +177,6 @@ class Down < TurtleMovement
   end
 end
 
-class AscendingInterval
-  def elements(start_position, end_position)
-    (start_position..end_position)
-  end
-
-  def position_with_offset(start, steps)
-    start + steps
-  end
-end
-
-class DescendingInterval
-  def elements(start_position, end_position)
-    start_position.downto(end_position)
-  end
-
-  def position_with_offset(start, steps)
-    start - steps
-  end
-end
-
-class MovablePosition
-  def initialize(start, interval)
-    @start = start
-    @interval = interval
-  end
-
-  def with_offset(offset)
-    @interval.position_with_offset(@start, offset)
-  end
-
-  def -(other)
-    @start - other
-  end
-end
-
 class Boundaries
   def initialize(turtle, steps_to_walk, movable_position)
     @turtle = turtle
@@ -243,11 +208,11 @@ class CurrentPosition
   end
 
   def row
-    MovablePosition.new(@turtle.current_row, @interval)
+    VerticalAxisMovablePosition.new(@turtle, @interval)
   end
 
   def column
-    MovablePosition.new(@turtle.current_column, @interval)
+    HorizontalAxisMovablePosition.new(@turtle, @interval)
   end
 end
 
@@ -257,14 +222,11 @@ class Positioner
     @steps_to_walk = steps_to_walk
     @interval = interval
     @axis_positioner = axis_positioner
-    # TODO define boundaries here
-    # @boundaries = Boundaries.new(@turtle, @steps_to_walk, @axis_positioner.movable_position)
+    @boundaries = Boundaries.new(@turtle, @steps_to_walk, @axis_positioner.movable_position)
   end
 
   def coordinates
-    boundaries = Boundaries.new(@turtle, @steps_to_walk, @axis_positioner.movable_position)
-
-    @interval.elements(boundaries.start_position, boundaries.end_position).map do |row|
+    @interval.elements(@boundaries.start_position, @boundaries.end_position).map do |row|
       @axis_positioner.coordinate(row)
     end
   end
@@ -301,5 +263,56 @@ class VerticalAxis < AxisPositioner
 
   def coordinate(row)
     GridCoordinates.new(row, @current_position.column)
+  end
+end
+
+class MovablePosition
+  def initialize(turtle, interval)
+    @turtle = turtle
+    @interval = interval
+  end
+
+  def with_offset(offset)
+    @interval.position_with_offset(start, offset)
+  end
+
+  def -(other)
+    start - other
+  end
+
+  def start
+    raise NotImplementedError, 'Implement this'
+  end
+end
+
+class HorizontalAxisMovablePosition < MovablePosition
+  def start
+    @turtle.current_column
+  end
+end
+
+class VerticalAxisMovablePosition < MovablePosition
+  def start
+    @turtle.current_row
+  end
+end
+
+class AscendingInterval
+  def elements(start_position, end_position)
+    (start_position..end_position)
+  end
+
+  def position_with_offset(start, steps)
+    start + steps
+  end
+end
+
+class DescendingInterval
+  def elements(start_position, end_position)
+    start_position.downto(end_position)
+  end
+
+  def position_with_offset(start, steps)
+    start - steps
   end
 end
