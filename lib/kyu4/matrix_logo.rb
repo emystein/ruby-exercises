@@ -224,8 +224,11 @@ class Positioner
   end
 
   def start_position
-    offset = @turtle.at_initial_position? ? 0 : 1
-    start_position_with_offset(offset)
+    start_position_with_offset(start_offset)
+  end
+
+  def start_offset
+    @turtle.at_initial_position? ? 0 : 1
   end
 
   def end_position
@@ -264,4 +267,3 @@ class VerticalPositioner < Positioner
     GridCoordinates.new(row, current_column)
   end
 end
-
