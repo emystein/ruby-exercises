@@ -128,7 +128,7 @@ end
 class Left < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
     descending_interval = DescendingInterval.new
-    horizontal_axis = HorizontalAxis.new(CurrentPosition.new(turtle_to_move, descending_interval))
+    horizontal_axis = HorizontalAxis.new(CurrentPosition.new(turtle_to_move))
     positioner = Positioner.new(steps_to_walk, descending_interval, horizontal_axis)
     Left.new(turtle_to_move, positioner, steps_to_walk)
   end
@@ -141,7 +141,7 @@ end
 class Right < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
     ascending_interval = AscendingInterval.new
-    horizontal_axis = HorizontalAxis.new(CurrentPosition.new(turtle_to_move, ascending_interval))
+    horizontal_axis = HorizontalAxis.new(CurrentPosition.new(turtle_to_move))
     positioner = Positioner.new(steps_to_walk, ascending_interval, horizontal_axis)
     Right.new(turtle_to_move, positioner, steps_to_walk)
   end
@@ -154,7 +154,7 @@ end
 class Up < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
     descending_interval = DescendingInterval.new
-    vertical_axis = VerticalAxis.new(CurrentPosition.new(turtle_to_move, descending_interval))
+    vertical_axis = VerticalAxis.new(CurrentPosition.new(turtle_to_move))
     positioner = Positioner.new(steps_to_walk, descending_interval, vertical_axis)
     Up.new(turtle_to_move, positioner, steps_to_walk)
   end
@@ -167,7 +167,7 @@ end
 class Down < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
     ascending_interval = AscendingInterval.new
-    vertical_axis = VerticalAxis.new(CurrentPosition.new(turtle_to_move, ascending_interval))
+    vertical_axis = VerticalAxis.new(CurrentPosition.new(turtle_to_move))
     positioner = Positioner.new(steps_to_walk, ascending_interval, vertical_axis)
     Down.new(turtle_to_move, positioner, steps_to_walk)
   end
@@ -178,9 +178,10 @@ class Down < TurtleMovement
 end
 
 class Boundaries
-  def initialize(steps_to_walk, movable_position)
+  def initialize(steps_to_walk, movable_position, interval)
     @steps_to_walk = steps_to_walk
     @movable_position = movable_position
+    @interval = interval
   end
 
   def start_position(turtle)
@@ -196,22 +197,21 @@ class Boundaries
   end
 
   def start_position_with_offset(offset)
-    @movable_position.with_offset(offset)
+    @interval.position_with_offset(@movable_position.start, offset)
   end
 end
 
 class CurrentPosition
-  def initialize(turtle, interval)
+  def initialize(turtle)
     @turtle = turtle
-    @interval = interval
   end
 
   def row
-    VerticalAxisMovablePosition.new(@turtle, @interval)
+    VerticalAxisMovablePosition.new(@turtle)
   end
 
   def column
-    HorizontalAxisMovablePosition.new(@turtle, @interval)
+    HorizontalAxisMovablePosition.new(@turtle)
   end
 end
 
@@ -219,7 +219,7 @@ class Positioner
   def initialize(steps_to_walk, interval, axis_positioner)
     @steps_to_walk = steps_to_walk
     @interval = interval
-    @boundaries = Boundaries.new(steps_to_walk, axis_positioner.movable_position)
+    @boundaries = Boundaries.new(steps_to_walk, axis_positioner.movable_position, interval)
     @axis_positioner = axis_positioner
   end
 
@@ -265,13 +265,8 @@ class VerticalAxis < AxisPositioner
 end
 
 class MovablePosition
-  def initialize(turtle, interval)
+  def initialize(turtle)
     @turtle = turtle
-    @interval = interval
-  end
-
-  def with_offset(offset)
-    @interval.position_with_offset(start, offset)
   end
 
   def -(other)
