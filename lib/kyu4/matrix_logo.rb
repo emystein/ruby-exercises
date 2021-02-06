@@ -184,6 +184,10 @@ class Boundaries
     @interval = interval
   end
 
+  def elements
+    @interval.elements(start_position, end_position)
+  end
+
   def start_position
     start_position_with_offset(@movable_position.start_offset)
   end
@@ -214,14 +218,13 @@ end
 class Positioner
   def initialize(steps_to_walk, interval, axis_positioner)
     @steps_to_walk = steps_to_walk
-    @interval = interval
     @boundaries = Boundaries.new(steps_to_walk, axis_positioner.movable_position, interval)
     @axis_positioner = axis_positioner
   end
 
   def coordinates
-    @interval.elements(@boundaries.start_position, @boundaries.end_position).map do |row|
-      @axis_positioner.coordinate(row)
+    @boundaries.elements.map do |position|
+      @axis_positioner.coordinate(position)
     end
   end
 end
