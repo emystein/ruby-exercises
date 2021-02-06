@@ -116,8 +116,8 @@ class TurtleMovement
   end
 
   def on(matrix_to_walk)
-    traveled = @positioner.coordinates(@turtle).map { |position| matrix_to_walk.value_at(position) }
-                                               .reject(&:nil?)
+    traveled = @positioner.coordinates.map { |position| matrix_to_walk.value_at(position) }
+                                      .reject(&:nil?)
 
     @turtle.update_position(self)
 
@@ -184,12 +184,8 @@ class Boundaries
     @interval = interval
   end
 
-  def start_position(turtle)
-    start_position_with_offset(start_offset(turtle))
-  end
-
-  def start_offset(turtle)
-    turtle.at_initial_position? ? 0 : 1
+  def start_position
+    start_position_with_offset(@movable_position.start_offset)
   end
 
   def end_position
@@ -223,8 +219,8 @@ class Positioner
     @axis_positioner = axis_positioner
   end
 
-  def coordinates(turtle_to_move)
-    @interval.elements(@boundaries.start_position(turtle_to_move), @boundaries.end_position).map do |row|
+  def coordinates
+    @interval.elements(@boundaries.start_position, @boundaries.end_position).map do |row|
       @axis_positioner.coordinate(row)
     end
   end
@@ -270,7 +266,15 @@ class MovablePosition
   end
 
   def -(other)
-    start - other
+    start_with_offset - other
+  end
+
+  def start_with_offset
+    start
+  end
+
+  def start_offset
+    @turtle.at_initial_position? ? 0 : 1
   end
 
   def start
