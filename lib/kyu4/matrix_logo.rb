@@ -231,32 +231,6 @@ class VerticalRail < AxisRail
   end
 end
 
-class PositionOnAxis
-  def initialize(turtle)
-    @turtle = turtle
-  end
-
-  def value
-    raise NotImplementedError, 'Implement this'
-  end
-
-  def -(other)
-    value - other
-  end
-end
-
-class HorizontalPosition < PositionOnAxis
-  def value
-    @turtle.current_column
-  end
-end
-
-class VerticalPosition < PositionOnAxis
-  def value
-    @turtle.current_row
-  end
-end
-
 class AscendingInterval
   def elements(start_position, end_position)
     (start_position..end_position)
