@@ -109,11 +109,11 @@ class ItineraryTract
 end
 
 class TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk, interval, axis_positioner)
+  def initialize(turtle_to_move, steps_to_walk, interval, axis_rail)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_positioner, interval)
-    @axis_positioner = axis_positioner
+    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_rail, interval)
+    @axis_rail = axis_rail
   end
 
   def on(matrix_to_walk)
@@ -125,13 +125,14 @@ class TurtleMovement
   end
 
   def coordinates
-    @linear_positions.elements.map { |position| @axis_positioner.coordinate(position) }
+    @linear_positions.elements.map { |position| @axis_rail.intersect(position) }
   end
 end
 
 class Left < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new, HorizontalRail.new(turtle_to_move))
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new,
+          HorizontalRail.new(turtle_to_move, DescendingOffset.new))
   end
 
   def from(position)
@@ -141,7 +142,8 @@ end
 
 class Right < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new, HorizontalRail.new(turtle_to_move))
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new,
+          HorizontalRail.new(turtle_to_move, AscendingOffset.new))
   end
 
   def from(position)
@@ -151,7 +153,8 @@ end
 
 class Up < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new, VerticalRail.new(turtle_to_move))
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new,
+          VerticalRail.new(turtle_to_move, DescendingOffset.new))
   end
 
   def from(position)
@@ -161,7 +164,8 @@ end
 
 class Down < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move))
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new,
+          VerticalRail.new(turtle_to_move, AscendingOffset.new))
   end
 
   def from(position)
@@ -170,10 +174,10 @@ class Down < TurtleMovement
 end
 
 class LinearPositions
-  def initialize(turtle_to_move, steps_to_walk, axis_positioner, interval)
+  def initialize(turtle_to_move, steps_to_walk, axis_rail, interval)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @axis_positioner = axis_positioner
+    @axis_rail = axis_rail
     @interval = interval
   end
 
@@ -193,20 +197,25 @@ class LinearPositions
   end
 
   def start_position_with_offset(offset)
-    @interval.position_with_offset(@axis_positioner.movable_position, offset)
+    @axis_rail.position_with_offset(offset)
   end
 end
 
 class AxisRail
-  def initialize(turtle)
+  def initialize(turtle, offset_direction)
     @turtle = turtle
+    @offset_direction = offset_direction
+  end
+
+  def position_with_offset(offset)
+    @offset_direction.position_with_offset(movable_position, offset)
   end
 
   def movable_position
     raise NotImplementedError, 'Implement this'
   end
 
-  def coordinate(position)
+  def intersect(position)
     raise NotImplementedError, 'Implement this'
   end
 end
@@ -216,7 +225,7 @@ class HorizontalRail < AxisRail
     @turtle.current_column
   end
 
-  def coordinate(column)
+  def intersect(column)
     GridCoordinates.new(@turtle.current_row, column)
   end
 end
@@ -226,7 +235,7 @@ class VerticalRail < AxisRail
     @turtle.current_row
   end
 
-  def coordinate(row)
+  def intersect(row)
     GridCoordinates.new(row, @turtle.current_column)
   end
 end
@@ -235,17 +244,21 @@ class AscendingInterval
   def elements(start_position, end_position)
     (start_position..end_position)
   end
-
-  def position_with_offset(start, steps)
-    start + steps
-  end
 end
 
 class DescendingInterval
   def elements(start_position, end_position)
     start_position.downto(end_position)
   end
+end
 
+class AscendingOffset
+  def position_with_offset(start, steps)
+    start + steps
+  end
+end
+
+class DescendingOffset
   def position_with_offset(start, steps)
     start - steps
   end
