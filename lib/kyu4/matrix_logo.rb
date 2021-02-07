@@ -131,7 +131,7 @@ end
 
 class Left < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    horizontal_axis = HorizontalAxis.new(CurrentPosition.new(turtle_to_move))
+    horizontal_axis = HorizontalAxis.new(turtle_to_move)
     Left.new(turtle_to_move, steps_to_walk, DescendingInterval.new, horizontal_axis)
   end
 
@@ -142,7 +142,7 @@ end
 
 class Right < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    horizontal_axis = HorizontalAxis.new(CurrentPosition.new(turtle_to_move))
+    horizontal_axis = HorizontalAxis.new(turtle_to_move)
     Right.new(turtle_to_move, steps_to_walk, AscendingInterval.new, horizontal_axis)
   end
 
@@ -153,7 +153,7 @@ end
 
 class Up < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    vertical_axis = VerticalAxis.new(CurrentPosition.new(turtle_to_move))
+    vertical_axis = VerticalAxis.new(turtle_to_move)
     Up.new(turtle_to_move, steps_to_walk, DescendingInterval.new, vertical_axis)
   end
 
@@ -164,7 +164,7 @@ end
 
 class Down < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    vertical_axis = VerticalAxis.new(CurrentPosition.new(turtle_to_move))
+    vertical_axis = VerticalAxis.new(turtle_to_move)
     Down.new(turtle_to_move, steps_to_walk, AscendingInterval.new, vertical_axis)
   end
 
@@ -212,8 +212,8 @@ class CurrentPosition
 end
 
 class AxisPositioner
-  def initialize(current_position)
-    @current_position = current_position
+  def initialize(turtle_to_move)
+    @current_position = CurrentPosition.new(turtle_to_move)
   end
 
   def movable_position
