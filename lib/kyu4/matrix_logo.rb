@@ -41,7 +41,7 @@ class Turtle
   end
 
   def move(movement_class, number_of_steps)
-    movement = movement_class.create(self, number_of_steps)
+    movement = movement_class.new(self, number_of_steps)
     @traveled_path << movement.on(@matrix_to_walk)
   end
 
@@ -104,7 +104,7 @@ class ItineraryTract
   end
 
   def prepare(turtle)
-    @movement_class.create(turtle, @steps_to_walk)
+    @movement_class.new(turtle, @steps_to_walk)
   end
 end
 
@@ -130,9 +130,8 @@ class TurtleMovement
 end
 
 class Left < TurtleMovement
-  def self.create(turtle_to_move, steps_to_walk)
-    horizontal_axis = HorizontalRail.new(turtle_to_move)
-    Left.new(turtle_to_move, steps_to_walk, DescendingInterval.new, horizontal_axis)
+  def initialize(turtle_to_move, steps_to_walk)
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new, HorizontalRail.new(turtle_to_move))
   end
 
   def from(position)
@@ -141,9 +140,8 @@ class Left < TurtleMovement
 end
 
 class Right < TurtleMovement
-  def self.create(turtle_to_move, steps_to_walk)
-    horizontal_axis = HorizontalRail.new(turtle_to_move)
-    Right.new(turtle_to_move, steps_to_walk, AscendingInterval.new, horizontal_axis)
+  def initialize(turtle_to_move, steps_to_walk)
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new, HorizontalRail.new(turtle_to_move))
   end
 
   def from(position)
@@ -152,9 +150,8 @@ class Right < TurtleMovement
 end
 
 class Up < TurtleMovement
-  def self.create(turtle_to_move, steps_to_walk)
-    vertical_axis = VerticalRail.new(turtle_to_move)
-    Up.new(turtle_to_move, steps_to_walk, DescendingInterval.new, vertical_axis)
+  def initialize(turtle_to_move, steps_to_walk)
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new, VerticalRail.new(turtle_to_move))
   end
 
   def from(position)
@@ -163,9 +160,8 @@ class Up < TurtleMovement
 end
 
 class Down < TurtleMovement
-  def self.create(turtle_to_move, steps_to_walk)
-    vertical_axis = VerticalRail.new(turtle_to_move)
-    Down.new(turtle_to_move, steps_to_walk, AscendingInterval.new, vertical_axis)
+  def initialize(turtle_to_move, steps_to_walk)
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move))
   end
 
   def from(position)
