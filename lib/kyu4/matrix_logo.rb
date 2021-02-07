@@ -112,7 +112,7 @@ class TurtleMovement
   def initialize(turtle_to_move, steps_to_walk, interval, axis_positioner)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @boundaries = Boundaries.new(steps_to_walk, axis_positioner.movable_position, interval)
+    @LinearPositions = LinearPositions.new(steps_to_walk, axis_positioner.movable_position, interval)
     @axis_positioner = axis_positioner
   end
 
@@ -125,13 +125,13 @@ class TurtleMovement
   end
 
   def coordinates
-    @boundaries.elements.map { |position| @axis_positioner.coordinate(position) }
+    @LinearPositions.elements.map { |position| @axis_positioner.coordinate(position) }
   end
 end
 
 class Left < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    horizontal_axis = HorizontalAxis.new(turtle_to_move)
+    horizontal_axis = HorizontalRail.new(turtle_to_move)
     Left.new(turtle_to_move, steps_to_walk, DescendingInterval.new, horizontal_axis)
   end
 
@@ -142,7 +142,7 @@ end
 
 class Right < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    horizontal_axis = HorizontalAxis.new(turtle_to_move)
+    horizontal_axis = HorizontalRail.new(turtle_to_move)
     Right.new(turtle_to_move, steps_to_walk, AscendingInterval.new, horizontal_axis)
   end
 
@@ -153,7 +153,7 @@ end
 
 class Up < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    vertical_axis = VerticalAxis.new(turtle_to_move)
+    vertical_axis = VerticalRail.new(turtle_to_move)
     Up.new(turtle_to_move, steps_to_walk, DescendingInterval.new, vertical_axis)
   end
 
@@ -164,7 +164,7 @@ end
 
 class Down < TurtleMovement
   def self.create(turtle_to_move, steps_to_walk)
-    vertical_axis = VerticalAxis.new(turtle_to_move)
+    vertical_axis = VerticalRail.new(turtle_to_move)
     Down.new(turtle_to_move, steps_to_walk, AscendingInterval.new, vertical_axis)
   end
 
@@ -173,7 +173,7 @@ class Down < TurtleMovement
   end
 end
 
-class Boundaries
+class LinearPositions
   def initialize(steps_to_walk, movable_position, interval)
     @steps_to_walk = steps_to_walk
     @movable_position = movable_position
@@ -193,7 +193,7 @@ class Boundaries
   end
 
   def start_position_with_offset(offset)
-    @interval.position_with_offset(@movable_position.start, offset)
+    @interval.position_with_offset(@movable_position.value, offset)
   end
 end
 
@@ -203,15 +203,15 @@ class CurrentPosition
   end
 
   def row
-    VerticalAxisMovablePosition.new(@turtle)
+    VerticalMovablePosition.new(@turtle)
   end
 
   def column
-    HorizontalAxisMovablePosition.new(@turtle)
+    HorizontalMovablePosition.new(@turtle)
   end
 end
 
-class AxisPositioner
+class AxisRail
   def initialize(turtle_to_move)
     @current_position = CurrentPosition.new(turtle_to_move)
   end
@@ -225,7 +225,7 @@ class AxisPositioner
   end
 end
 
-class HorizontalAxis < AxisPositioner
+class HorizontalRail < AxisRail
   def movable_position
     @current_position.column
   end
@@ -235,7 +235,7 @@ class HorizontalAxis < AxisPositioner
   end
 end
 
-class VerticalAxis < AxisPositioner
+class VerticalRail < AxisRail
   def movable_position
     @current_position.row
   end
@@ -251,26 +251,26 @@ class MovablePosition
   end
 
   def -(other)
-    start - other
+    value - other
   end
 
   def start_offset
     @turtle.at_initial_position? ? 0 : 1
   end
 
-  def start
+  def value
     raise NotImplementedError, 'Implement this'
   end
 end
 
-class HorizontalAxisMovablePosition < MovablePosition
-  def start
+class HorizontalMovablePosition < MovablePosition
+  def value
     @turtle.current_column
   end
 end
 
-class VerticalAxisMovablePosition < MovablePosition
-  def start
+class VerticalMovablePosition < MovablePosition
+  def value
     @turtle.current_row
   end
 end
