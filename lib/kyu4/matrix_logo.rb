@@ -112,7 +112,7 @@ class TurtleMovement
   def initialize(turtle_to_move, steps_to_walk, interval, axis_positioner)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_positioner.movable_position, interval)
+    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_positioner, interval)
     @axis_positioner = axis_positioner
   end
 
@@ -170,10 +170,10 @@ class Down < TurtleMovement
 end
 
 class LinearPositions
-  def initialize(turtle_to_move, steps_to_walk, movable_position, interval)
+  def initialize(turtle_to_move, steps_to_walk, axis_positioner, interval)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @movable_position = movable_position
+    @axis_positioner = axis_positioner
     @interval = interval
   end
 
@@ -193,27 +193,13 @@ class LinearPositions
   end
 
   def start_position_with_offset(offset)
-    @interval.position_with_offset(@movable_position.value, offset)
-  end
-end
-
-class CurrentPosition
-  def initialize(turtle)
-    @turtle = turtle
-  end
-
-  def row
-    VerticalPosition.new(@turtle)
-  end
-
-  def column
-    HorizontalPosition.new(@turtle)
+    @interval.position_with_offset(@axis_positioner.movable_position, offset)
   end
 end
 
 class AxisRail
-  def initialize(turtle_to_move)
-    @current_position = CurrentPosition.new(turtle_to_move)
+  def initialize(turtle)
+    @turtle = turtle
   end
 
   def movable_position
@@ -227,21 +213,21 @@ end
 
 class HorizontalRail < AxisRail
   def movable_position
-    @current_position.column
+    @turtle.current_column
   end
 
   def coordinate(column)
-    GridCoordinates.new(@current_position.row, column)
+    GridCoordinates.new(@turtle.current_row, column)
   end
 end
 
 class VerticalRail < AxisRail
   def movable_position
-    @current_position.row
+    @turtle.current_row
   end
 
   def coordinate(row)
-    GridCoordinates.new(row, @current_position.column)
+    GridCoordinates.new(row, @turtle.current_column)
   end
 end
 
