@@ -207,11 +207,11 @@ class CurrentPosition
   end
 
   def row
-    VerticalMovablePosition.new(@turtle)
+    VerticalPosition.new(@turtle)
   end
 
   def column
-    HorizontalMovablePosition.new(@turtle)
+    HorizontalPosition.new(@turtle)
   end
 end
 
@@ -249,7 +249,7 @@ class VerticalRail < AxisRail
   end
 end
 
-class MovablePosition
+class PositionOnAxis
   def initialize(turtle)
     @turtle = turtle
   end
@@ -263,13 +263,13 @@ class MovablePosition
   end
 end
 
-class HorizontalMovablePosition < MovablePosition
+class HorizontalPosition < PositionOnAxis
   def value
     @turtle.current_column
   end
 end
 
-class VerticalMovablePosition < MovablePosition
+class VerticalPosition < PositionOnAxis
   def value
     @turtle.current_row
   end
