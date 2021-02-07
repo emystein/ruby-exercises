@@ -112,7 +112,7 @@ class TurtleMovement
   def initialize(turtle_to_move, steps_to_walk, interval, axis_positioner)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @LinearPositions = LinearPositions.new(steps_to_walk, axis_positioner.movable_position, interval)
+    @linear_positions = LinearPositions.new(steps_to_walk, axis_positioner.movable_position, interval)
     @axis_positioner = axis_positioner
   end
 
@@ -125,7 +125,7 @@ class TurtleMovement
   end
 
   def coordinates
-    @LinearPositions.elements.map { |position| @axis_positioner.coordinate(position) }
+    @linear_positions.elements.map { |position| @axis_positioner.coordinate(position) }
   end
 end
 
