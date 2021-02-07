@@ -112,7 +112,7 @@ class TurtleMovement
   def initialize(turtle_to_move, steps_to_walk, interval, axis_positioner)
     @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
-    @linear_positions = LinearPositions.new(steps_to_walk, axis_positioner.movable_position, interval)
+    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_positioner.movable_position, interval)
     @axis_positioner = axis_positioner
   end
 
@@ -174,7 +174,8 @@ class Down < TurtleMovement
 end
 
 class LinearPositions
-  def initialize(steps_to_walk, movable_position, interval)
+  def initialize(turtle_to_move, steps_to_walk, movable_position, interval)
+    @turtle = turtle_to_move
     @steps_to_walk = steps_to_walk
     @movable_position = movable_position
     @interval = interval
@@ -185,7 +186,10 @@ class LinearPositions
   end
 
   def start_position
-    start_position_with_offset(@movable_position.start_offset)
+    # TODO: make this logic more declarative
+    start_offset = @turtle.at_initial_position? ? 0 : 1
+
+    start_position_with_offset(start_offset)
   end
 
   def end_position
@@ -250,16 +254,12 @@ class MovablePosition
     @turtle = turtle
   end
 
-  def -(other)
-    value - other
-  end
-
-  def start_offset
-    @turtle.at_initial_position? ? 0 : 1
-  end
-
   def value
     raise NotImplementedError, 'Implement this'
+  end
+
+  def -(other)
+    value - other
   end
 end
 
