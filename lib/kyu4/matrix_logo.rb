@@ -2,7 +2,7 @@ require 'rectangular_dimensions'
 require 'grid_coordinates'
 
 class Turtle
-  attr_reader :current_position
+  attr_accessor :current_position
 
   def self.start_at(matrix_to_walk, initial_position)
     Turtle.new(matrix_to_walk, initial_position)
@@ -53,12 +53,13 @@ class Turtle
     @traveled_path.flatten
   end
 
-  def update_position(movement)
-    @current_position = movement.from(@current_position)
-  end
-
   def at_initial_position?
     @current_position == @initial_position
+  end
+
+  def step_over(position, matrix_to_walk)
+    @current_position = position
+    matrix_to_walk.value_at(position)
   end
 end
 
@@ -117,11 +118,11 @@ class TurtleMovement
   end
 
   def on(matrix_to_walk)
-    traveled = coordinates.map { |position| matrix_to_walk.value_at(position) }.reject(&:nil?)
+    traveled = coordinates.map do |position|
+      @turtle.step_over(position, matrix_to_walk)
+    end
 
-    @turtle.update_position(self)
-
-    traveled
+    traveled.reject(&:nil?)
   end
 
   def coordinates
@@ -131,45 +132,25 @@ end
 
 class Left < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new,
-          HorizontalRail.new(turtle_to_move, DescendingOffset.new))
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row, position.column - @steps_to_walk)
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new, HorizontalRail.new(turtle_to_move, DescendingOffset.new))
   end
 end
 
 class Right < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new,
-          HorizontalRail.new(turtle_to_move, AscendingOffset.new))
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row, position.column + @steps_to_walk)
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new, HorizontalRail.new(turtle_to_move, AscendingOffset.new))
   end
 end
 
 class Up < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new,
-          VerticalRail.new(turtle_to_move, DescendingOffset.new))
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row - @steps_to_walk, position.column)
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new, VerticalRail.new(turtle_to_move, DescendingOffset.new))
   end
 end
 
 class Down < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new,
-          VerticalRail.new(turtle_to_move, AscendingOffset.new))
-  end
-
-  def from(position)
-    GridCoordinates.new(position.row + @steps_to_walk, position.column)
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move, AscendingOffset.new))
   end
 end
 
