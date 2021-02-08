@@ -42,11 +42,11 @@ class Turtle
 
   def move(movement_class, number_of_steps)
     movement = movement_class.new(self, number_of_steps)
-    @traveled_path << movement.on(@matrix_to_walk)
+    @traveled_path << movement.go
   end
 
   def travel(itinerary)
-    @traveled_path << itinerary.traverse(@matrix_to_walk, self)
+    @traveled_path << itinerary.traverse
   end
 
   def traveled_so_far
@@ -57,15 +57,15 @@ class Turtle
     @current_position == @initial_position
   end
 
-  def step_over(position, matrix_to_walk)
+  def step_over(position)
     @current_position = position
-    matrix_to_walk.value_at(position)
+    @matrix_to_walk.value_at(position)
   end
 end
 
 class Itinerary
   def initialize(turtle)
-    @turtle = turtle
+    @turtle_to_move = turtle
     @tracts = []
   end
 
@@ -89,9 +89,9 @@ class Itinerary
     @tracts << ItineraryTract.new(klass, self, steps_to_walk)
   end
 
-  def traverse(matrix_to_walk, turtle)
-    @tracts.map { |tract| tract.prepare(turtle) }
-           .flat_map { |movement| movement.on(matrix_to_walk) }
+  def traverse
+    @tracts.map { |tract| tract.prepare(@turtle_to_move) }
+           .flat_map(&:go)
   end
 end
 
@@ -100,7 +100,7 @@ class ItineraryTract
 
   def initialize(movement_class, turtle, steps_to_walk)
     @movement_class = movement_class
-    @turtle = turtle
+    @turtle_to_move = turtle
     @steps_to_walk = steps_to_walk
   end
 
@@ -110,19 +110,18 @@ class ItineraryTract
 end
 
 class TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk, interval, axis_rail)
-    @turtle = turtle_to_move
-    @steps_to_walk = steps_to_walk
-    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_rail, interval)
+  def initialize(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
+    @turtle_to_move = turtle_to_move
+    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_rail, positions_interval)
     @axis_rail = axis_rail
   end
 
-  def on(matrix_to_walk)
-    traveled = coordinates.map do |position|
-      @turtle.step_over(position, matrix_to_walk)
+  def go
+    cell_values = coordinates.map do |coordinate|
+      @turtle_to_move.step_over(coordinate)
     end
 
-    traveled.reject(&:nil?)
+    cell_values.reject(&:nil?)
   end
 
   def coordinates
@@ -155,20 +154,20 @@ class Down < TurtleMovement
 end
 
 class LinearPositions
-  def initialize(turtle_to_move, steps_to_walk, axis_rail, interval)
-    @turtle = turtle_to_move
+  def initialize(turtle_to_move, steps_to_walk, axis_rail, positions_interval)
+    @turtle_to_move = turtle_to_move
     @steps_to_walk = steps_to_walk
     @axis_rail = axis_rail
-    @interval = interval
+    @positions_interval = positions_interval
   end
 
   def elements
-    @interval.elements(start_position, end_position)
+    @positions_interval.elements(start_position, end_position)
   end
 
   def start_position
     # TODO: make this logic more declarative
-    start_offset = @turtle.at_initial_position? ? 0 : 1
+    start_offset = @turtle_to_move.at_initial_position? ? 0 : 1
 
     start_position_with_offset(start_offset)
   end
@@ -178,22 +177,21 @@ class LinearPositions
   end
 
   def start_position_with_offset(offset)
-    @axis_rail.position_with_offset(offset)
+    @axis_rail.current_position_with_offset(offset)
   end
 end
 
 class AxisRail
   def initialize(turtle, offset_direction)
-    @turtle = turtle
+    @turtle_to_move = turtle
     @position_offset = offset_direction
   end
 
-  def position_with_offset(offset)
-    @position_offset.from(movable_position, offset)
+  def current_position_with_offset(offset)
+    @position_offset.from(current_position_on_axis, offset)
   end
 
-  # TODO: rename
-  def movable_position
+  def current_position_on_axis
     raise NotImplementedError, 'Implement this'
   end
 
@@ -203,22 +201,22 @@ class AxisRail
 end
 
 class HorizontalRail < AxisRail
-  def movable_position
-    @turtle.current_column
+  def current_position_on_axis
+    @turtle_to_move.current_column
   end
 
   def intersect(column)
-    GridCoordinates.new(@turtle.current_row, column)
+    GridCoordinates.new(@turtle_to_move.current_row, column)
   end
 end
 
 class VerticalRail < AxisRail
-  def movable_position
-    @turtle.current_row
+  def current_position_on_axis
+    @turtle_to_move.current_row
   end
 
   def intersect(row)
-    GridCoordinates.new(row, @turtle.current_column)
+    GridCoordinates.new(row, @turtle_to_move.current_column)
   end
 end
 

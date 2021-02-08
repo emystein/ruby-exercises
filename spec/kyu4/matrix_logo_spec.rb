@@ -15,25 +15,25 @@ describe 'Move left' do
   with_them do
     before(:each) do
       @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 3))
+      @turtle_to_move = Turtle.start_at(@matrix, GridCoordinates.new(1, 3))
     end
     it 'Turtle walk' do
       (1..iterations).each do
-        @turtle.left(steps)
+        @turtle_to_move.left(steps)
       end
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new(@turtle)
+      itinerary = Itinerary.new(@turtle_to_move)
 
       (1..iterations).each do
         itinerary.left(steps)
       end
 
-      @turtle.travel(itinerary)
+      @turtle_to_move.travel(itinerary)
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
   end
 end
@@ -53,25 +53,25 @@ describe 'Move right' do
   with_them do
     before(:each) do
       @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
+      @turtle_to_move = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
       (1..iterations).each do
-        @turtle.right(steps)
+        @turtle_to_move.right(steps)
       end
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
     it 'Travel following route' do
-      itinerary = Itinerary.new(@turtle)
+      itinerary = Itinerary.new(@turtle_to_move)
 
       (1..iterations).each do
         itinerary.right(steps)
       end
 
-      @turtle.travel(itinerary)
+      @turtle_to_move.travel(itinerary)
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
   end
 end
@@ -89,25 +89,25 @@ describe 'Move up' do
   with_them do
     before(:each) do
       @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(initial_row, 1))
+      @turtle_to_move = Turtle.start_at(@matrix, GridCoordinates.new(initial_row, 1))
     end
     it 'Turtle walk' do
       (1..iterations).each do
-        @turtle.up(steps)
+        @turtle_to_move.up(steps)
       end
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new(@turtle)
+      itinerary = Itinerary.new(@turtle_to_move)
 
       (1..iterations).each do
         itinerary.up(steps)
       end
 
-      @turtle.travel(itinerary)
+      @turtle_to_move.travel(itinerary)
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
   end
 end
@@ -126,25 +126,25 @@ describe 'Move down' do
   with_them do
     before(:each) do
       @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
+      @turtle_to_move = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
       (1..iterations).each do
-        @turtle.down(steps)
+        @turtle_to_move.down(steps)
       end
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new(@turtle)
+      itinerary = Itinerary.new(@turtle_to_move)
 
       (1..iterations).each do
         itinerary.down(steps)
       end
 
-      @turtle.travel(itinerary)
+      @turtle_to_move.travel(itinerary)
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
   end
 end
@@ -159,26 +159,26 @@ describe 'Move clocwise starting at the top left' do
   with_them do
     before(:each) do
       @matrix = Matrix.new(seed)
-      @turtle = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
+      @turtle_to_move = Turtle.start_at(@matrix, GridCoordinates.new(1, 1))
     end
     it 'Turtle walk' do
-      @turtle.right(steps)
-      @turtle.down(steps)
-      @turtle.left(steps)
-      @turtle.up(steps)
+      @turtle_to_move.right(steps)
+      @turtle_to_move.down(steps)
+      @turtle_to_move.left(steps)
+      @turtle_to_move.up(steps)
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
     it 'Travel following itinerary' do
-      itinerary = Itinerary.new(@turtle)
+      itinerary = Itinerary.new(@turtle_to_move)
       itinerary.right(steps)
       itinerary.down(steps)
       itinerary.left(steps)
       itinerary.up(steps)
 
-      @turtle.travel(itinerary)
+      @turtle_to_move.travel(itinerary)
 
-      expect(@turtle.traveled_so_far).to eq(expected)
+      expect(@turtle_to_move.traveled_so_far).to eq(expected)
     end
   end
 end
