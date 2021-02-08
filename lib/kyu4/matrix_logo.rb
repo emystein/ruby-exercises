@@ -185,13 +185,14 @@ end
 class AxisRail
   def initialize(turtle, offset_direction)
     @turtle = turtle
-    @offset_direction = offset_direction
+    @position_offset = offset_direction
   end
 
   def position_with_offset(offset)
-    @offset_direction.position_with_offset(movable_position, offset)
+    @position_offset.from(movable_position, offset)
   end
 
+  # TODO: rename
   def movable_position
     raise NotImplementedError, 'Implement this'
   end
@@ -234,13 +235,13 @@ class DescendingInterval
 end
 
 class PositiveOffset
-  def position_with_offset(start, steps)
+  def from(start, steps)
     start + steps
   end
 end
 
 class NegativeOffset
-  def position_with_offset(start, steps)
+  def from(start, steps)
     start - steps
   end
 end
