@@ -132,25 +132,25 @@ end
 
 class Left < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new, HorizontalRail.new(turtle_to_move, DescendingOffset.new))
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new, HorizontalRail.new(turtle_to_move, NegativeOffset.new))
   end
 end
 
 class Right < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new, HorizontalRail.new(turtle_to_move, AscendingOffset.new))
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new, HorizontalRail.new(turtle_to_move, PositiveOffset.new))
   end
 end
 
 class Up < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new, VerticalRail.new(turtle_to_move, DescendingOffset.new))
+    super(turtle_to_move, steps_to_walk, DescendingInterval.new, VerticalRail.new(turtle_to_move, NegativeOffset.new))
   end
 end
 
 class Down < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move, AscendingOffset.new))
+    super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move, PositiveOffset.new))
   end
 end
 
@@ -233,13 +233,13 @@ class DescendingInterval
   end
 end
 
-class AscendingOffset
+class PositiveOffset
   def position_with_offset(start, steps)
     start + steps
   end
 end
 
-class DescendingOffset
+class NegativeOffset
   def position_with_offset(start, steps)
     start - steps
   end
