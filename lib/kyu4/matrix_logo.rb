@@ -109,23 +109,53 @@ class ItineraryTract
   end
 end
 
+
 class TurtleMovement
   def initialize(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
     @turtle_to_move = turtle_to_move
-    @linear_positions = LinearPositions.new(turtle_to_move, steps_to_walk, axis_rail, positions_interval)
-    @axis_rail = axis_rail
+    @coordinates = TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
   end
 
   def go
-    cell_values = coordinates.map do |coordinate|
+    cell_values = @coordinates.map do |coordinate|
       @turtle_to_move.step_over(coordinate)
     end
 
     cell_values.reject(&:nil?)
   end
+end
 
-  def coordinates
-    @linear_positions.elements.map { |position| @axis_rail.intersect(position) }
+class TurtleMovementCoordinates
+  include Enumerable
+
+  def initialize(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
+    @turtle_to_move = turtle_to_move
+    @steps_to_walk = steps_to_walk
+    @positions_interval = positions_interval
+    @axis_rail = axis_rail
+  end
+
+  def each
+    positions.map { |position| yield @axis_rail.intersect(position) }
+  end
+
+  def positions
+    @positions_interval.elements(start_position, end_position)
+  end
+
+  def start_position
+    # TODO: make this logic more declarative
+    start_offset = @turtle_to_move.at_initial_position? ? 0 : 1
+
+    start_position_with_offset(start_offset)
+  end
+
+  def end_position
+    start_position_with_offset(@steps_to_walk)
+  end
+
+  def start_position_with_offset(offset)
+    @axis_rail.current_position_with_offset(offset)
   end
 end
 
@@ -150,34 +180,6 @@ end
 class Down < TurtleMovement
   def initialize(turtle_to_move, steps_to_walk)
     super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move, PositiveOffset.new))
-  end
-end
-
-class LinearPositions
-  def initialize(turtle_to_move, steps_to_walk, axis_rail, positions_interval)
-    @turtle_to_move = turtle_to_move
-    @steps_to_walk = steps_to_walk
-    @axis_rail = axis_rail
-    @positions_interval = positions_interval
-  end
-
-  def elements
-    @positions_interval.elements(start_position, end_position)
-  end
-
-  def start_position
-    # TODO: make this logic more declarative
-    start_offset = @turtle_to_move.at_initial_position? ? 0 : 1
-
-    start_position_with_offset(start_offset)
-  end
-
-  def end_position
-    start_position_with_offset(@steps_to_walk)
-  end
-
-  def start_position_with_offset(offset)
-    @axis_rail.current_position_with_offset(offset)
   end
 end
 
