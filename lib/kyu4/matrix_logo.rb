@@ -2,7 +2,7 @@ require 'rectangular_dimensions'
 require 'grid_coordinates'
 
 class Turtle
-  attr_accessor :current_position
+  attr_accessor :current_coordinate
 
   def self.start_at(matrix_to_walk, initial_position)
     Turtle.new(matrix_to_walk, initial_position)
@@ -11,38 +11,59 @@ class Turtle
   def initialize(matrix_to_walk, initial_position)
     @matrix_to_walk = matrix_to_walk
     @initial_position = initial_position
-    @current_position = initial_position
+    @current_coordinate = initial_position
     @movements = []
     @traveled_path = []
   end
 
   def current_row
-    @current_position.row
+    @current_coordinate.row
   end
 
   def current_column
-    @current_position.column
+    @current_coordinate.column
+  end
+
+  def at_start?
+    @current_coordinate == @initial_position
   end
 
   def left(number_of_steps)
-    move(Left, number_of_steps)
+    move(LeftMovementCoordinates, number_of_steps)
   end
 
   def right(number_of_steps)
-    move(Right, number_of_steps)
+    move(RightMovementCoordinates, number_of_steps)
   end
 
   def up(number_of_steps)
-    move(Up, number_of_steps)
+    move(UpMovementCoordinates, number_of_steps)
   end
 
   def down(number_of_steps)
-    move(Down, number_of_steps)
+    move(DownMovementCoordinates, number_of_steps)
   end
 
-  def move(movement_class, number_of_steps)
-    movement = movement_class.new(self, number_of_steps)
-    @traveled_path << movement.go
+  def move(coordinates_class, number_of_steps)
+    coordinates = coordinates_class.create(self, number_of_steps)
+    @traveled_path << traverse(coordinates)
+  end
+
+  def traverse(coordinates)
+    cell_values = coordinates.map do |coordinate|
+      step_over(coordinate)
+      look_at(coordinate)
+    end
+
+    cell_values.reject(&:nil?)
+  end
+
+  def step_over(coordinate)
+    @current_coordinate = coordinate
+  end
+
+  def look_at(coordinate)
+    @matrix_to_walk.value_at(coordinate)
   end
 
   def travel(itinerary)
@@ -51,15 +72,6 @@ class Turtle
 
   def traveled_so_far
     @traveled_path.flatten
-  end
-
-  def at_initial_position?
-    @current_position == @initial_position
-  end
-
-  def step_over(position)
-    @current_position = position
-    @matrix_to_walk.value_at(position)
   end
 end
 
@@ -70,19 +82,19 @@ class Itinerary
   end
 
   def left(number_of_steps)
-    add_tract(Left, number_of_steps)
+    add_tract(LeftMovementCoordinates, number_of_steps)
   end
 
   def right(number_of_steps)
-    add_tract(Right, number_of_steps)
+    add_tract(RightMovementCoordinates, number_of_steps)
   end
 
   def up(number_of_steps)
-    add_tract(Up, number_of_steps)
+    add_tract(UpMovementCoordinates, number_of_steps)
   end
 
   def down(number_of_steps)
-    add_tract(Down, number_of_steps)
+    add_tract(DownMovementCoordinates, number_of_steps)
   end
 
   def add_tract(klass, steps_to_walk)
@@ -91,7 +103,7 @@ class Itinerary
 
   def traverse
     @tracts.map { |tract| tract.prepare(@turtle_to_move) }
-           .flat_map(&:go)
+           .flat_map{ |coordinates| @turtle_to_move.traverse(coordinates) }
   end
 end
 
@@ -105,23 +117,7 @@ class ItineraryTract
   end
 
   def prepare(turtle)
-    @movement_class.new(turtle, @steps_to_walk)
-  end
-end
-
-
-class TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
-    @turtle_to_move = turtle_to_move
-    @coordinates = TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
-  end
-
-  def go
-    cell_values = @coordinates.map do |coordinate|
-      @turtle_to_move.step_over(coordinate)
-    end
-
-    cell_values.reject(&:nil?)
+    @movement_class.create(turtle, @steps_to_walk)
   end
 end
 
@@ -145,7 +141,7 @@ class TurtleMovementCoordinates
 
   def start_position
     # TODO: make this logic more declarative
-    start_offset = @turtle_to_move.at_initial_position? ? 0 : 1
+    start_offset = @turtle_to_move.at_start? ? 0 : 1
 
     start_position_with_offset(start_offset)
   end
@@ -159,29 +155,73 @@ class TurtleMovementCoordinates
   end
 end
 
-class Left < TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new, HorizontalRail.new(turtle_to_move, NegativeOffset.new))
+class MovementCoordinates
+  def self.create(turtle_to_move, steps_to_walk)
+    raise NotImplementedError, 'Implement this'
   end
 end
 
-class Right < TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new, HorizontalRail.new(turtle_to_move, PositiveOffset.new))
+class LeftMovementCoordinates < MovementCoordinates
+  def self.create(turtle_to_move, steps_to_walk)
+    positions = HorizontalDescendingPositions.new(turtle_to_move)
+    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
   end
 end
 
-class Up < TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, DescendingInterval.new, VerticalRail.new(turtle_to_move, NegativeOffset.new))
+class RightMovementCoordinates < MovementCoordinates
+  def self.create(turtle_to_move, steps_to_walk)
+    positions = HorizontalAscendingPositions.new(turtle_to_move)
+    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
   end
 end
 
-class Down < TurtleMovement
-  def initialize(turtle_to_move, steps_to_walk)
-    super(turtle_to_move, steps_to_walk, AscendingInterval.new, VerticalRail.new(turtle_to_move, PositiveOffset.new))
+class UpMovementCoordinates < MovementCoordinates
+  def self.create(turtle_to_move, steps_to_walk)
+    positions = VerticalDescendingPositions.new(turtle_to_move)
+    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
   end
 end
+
+class DownMovementCoordinates < MovementCoordinates
+  def self.create(turtle_to_move, steps_to_walk)
+    positions = VerticalAscendingPositions.new(turtle_to_move)
+    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
+  end
+end
+
+class Positions
+  attr_reader :positions_interval, :axis_rail
+end
+
+class HorizontalDescendingPositions < Positions
+  def initialize(turtle_to_move)
+    @positions_interval = DescendingInterval.new
+    @axis_rail = HorizontalRail.new(turtle_to_move, NegativeOffset.new)
+  end
+end
+
+class HorizontalAscendingPositions < Positions
+  def initialize(turtle_to_move)
+    @positions_interval = AscendingInterval.new
+    @axis_rail = HorizontalRail.new(turtle_to_move, PositiveOffset.new)
+  end
+end
+
+class VerticalDescendingPositions < Positions
+  def initialize(turtle_to_move)
+    @positions_interval = DescendingInterval.new
+    @axis_rail = VerticalRail.new(turtle_to_move, NegativeOffset.new)
+  end
+end
+
+class VerticalAscendingPositions < Positions
+  def initialize(turtle_to_move)
+    @positions_interval = AscendingInterval.new
+    @axis_rail = VerticalRail.new(turtle_to_move, PositiveOffset.new)
+  end
+end
+
+
 
 class AxisRail
   def initialize(turtle, offset_direction)
