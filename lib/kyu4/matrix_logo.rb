@@ -165,11 +165,11 @@ class AxisRail
     # TODO: make this logic more declarative
     start_offset = @turtle_to_move.at_start? ? 0 : 1
 
-    start_position_with_offset(start_offset)
+    current_position_with_offset(start_offset)
   end
 
   def end_position
-    start_position_with_offset(@limit_position)
+    current_position_with_offset(@limit_position)
   end
 
   def current_position_on_axis
@@ -181,10 +181,6 @@ class AxisRail
   end
 
   private
-
-  def start_position_with_offset(offset)
-    current_position_with_offset(offset)
-  end
 
   def current_position_with_offset(offset)
     @positions_interval.position_with_offset(current_position_on_axis, offset)
