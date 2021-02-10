@@ -181,19 +181,6 @@ class AxisRail
   end
 end
 
-class CurrentPosition
-  attr_reader :position
-
-  def initialize(position, positions_interval)
-    @position = position
-    @positions_interval = positions_interval
-  end
-
-  def with_offset(offset)
-    @positions_interval.position_with_offset(@position, offset)
-  end
-end
-
 class HorizontalRail < AxisRail
   def current_position
     CurrentPosition.new(@turtle_to_move.current_column, @positions_interval)
@@ -231,5 +218,18 @@ class DescendingInterval
 
   def position_with_offset(start, steps)
     start - steps
+  end
+end
+
+class CurrentPosition
+  attr_reader :position
+
+  def initialize(position, positions_interval)
+    @position = position
+    @positions_interval = positions_interval
+  end
+
+  def with_offset(offset)
+    @positions_interval.position_with_offset(@position, offset)
   end
 end
