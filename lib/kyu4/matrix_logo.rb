@@ -165,31 +165,38 @@ class AxisRail
     # TODO: make this logic more declarative
     start_offset = @turtle_to_move.at_start? ? 0 : 1
 
-    current_position_with_offset(start_offset)
+    current_position.with_offset(start_offset)
   end
 
   def end_position
-    current_position_with_offset(@limit_position)
+    current_position.with_offset(@limit_position)
   end
 
-  def current_position_on_axis
+  def current_position
     raise NotImplementedError, 'Implement this'
   end
 
   def intersect(position)
     raise NotImplementedError, 'Implement this'
   end
+end
 
-  private
+class CurrentPosition
+  attr_reader :position
 
-  def current_position_with_offset(offset)
-    @positions_interval.position_with_offset(current_position_on_axis, offset)
+  def initialize(position, positions_interval)
+    @position = position
+    @positions_interval = positions_interval
+  end
+
+  def with_offset(offset)
+    @positions_interval.position_with_offset(@position, offset)
   end
 end
 
 class HorizontalRail < AxisRail
-  def current_position_on_axis
-    @turtle_to_move.current_column
+  def current_position
+    CurrentPosition.new(@turtle_to_move.current_column, @positions_interval)
   end
 
   def intersect(column)
@@ -198,8 +205,8 @@ class HorizontalRail < AxisRail
 end
 
 class VerticalRail < AxisRail
-  def current_position_on_axis
-    @turtle_to_move.current_row
+  def current_position
+    CurrentPosition.new(@turtle_to_move.current_row, @positions_interval)
   end
 
   def intersect(row)
