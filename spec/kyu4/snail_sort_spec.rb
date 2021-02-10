@@ -50,7 +50,7 @@ describe 'Matrix rows and columns' do
   describe 'Slices' do
     matrix = Matrix.new([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    where(:from, :to, :expected_row_slice, :expected_column_slice) do
+    where(:position_with_offset, :to, :expected_row_slice, :expected_column_slice) do
       [
         [0, 0, [], []],
         [0, 1, [], []],
@@ -69,10 +69,10 @@ describe 'Matrix rows and columns' do
 
     with_them do
       it 'Row Slice' do
-        expect(matrix.row_slice(from, to)).to eq(expected_row_slice)
+        expect(matrix.row_slice(position_with_offset, to)).to eq(expected_row_slice)
       end
       it 'Column Slice' do
-        expect(matrix.column_slice(from, to)).to eq(expected_column_slice)
+        expect(matrix.column_slice(position_with_offset, to)).to eq(expected_column_slice)
       end
     end
   end
