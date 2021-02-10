@@ -45,14 +45,15 @@ class Turtle
   end
 
   def move(coordinates_class, number_of_steps)
-    coordinates = coordinates_class.create(self, number_of_steps)
+    coordinates = coordinates_class.new(self, number_of_steps)
+
     @traveled_path << traverse(coordinates)
   end
 
   def traverse(coordinates)
     cell_values = coordinates.map do |coordinate|
       step_over(coordinate)
-      look_at(coordinate)
+      content_of(coordinate)
     end
 
     cell_values.reject(&:nil?)
@@ -62,7 +63,7 @@ class Turtle
     @current_coordinate = coordinate
   end
 
-  def look_at(coordinate)
+  def content_of(coordinate)
     @matrix_to_walk.value_at(coordinate)
   end
 
@@ -103,7 +104,7 @@ class Itinerary
 
   def traverse
     @tracts.map { |tract| tract.prepare(@turtle_to_move) }
-           .flat_map{ |coordinates| @turtle_to_move.traverse(coordinates) }
+           .flat_map { |coordinates| @turtle_to_move.traverse(coordinates) }
   end
 end
 
@@ -117,26 +118,66 @@ class ItineraryTract
   end
 
   def prepare(turtle)
-    @movement_class.create(turtle, @steps_to_walk)
+    @movement_class.new(turtle, @steps_to_walk)
   end
 end
 
 class TurtleMovementCoordinates
   include Enumerable
 
-  def initialize(turtle_to_move, steps_to_walk, positions_interval, axis_rail)
-    @turtle_to_move = turtle_to_move
-    @steps_to_walk = steps_to_walk
+  attr_reader :positions_interval, :axis_rail
+
+  def initialize(positions_interval, axis_rail)
     @positions_interval = positions_interval
     @axis_rail = axis_rail
   end
 
-  def each
-    positions.map { |position| yield @axis_rail.intersect(position) }
+  def each(&block)
+    @axis_rail.coordinates(@positions_interval).map(&block)
+  end
+end
+
+class LeftMovementCoordinates < TurtleMovementCoordinates
+  def initialize(turtle_to_move, steps_to_walk)
+    positions_interval = DescendingInterval.new
+    axis_rail = HorizontalRail.new(turtle_to_move, DescendingInterval.new, steps_to_walk)
+    super(positions_interval, axis_rail)
+  end
+end
+
+class RightMovementCoordinates < TurtleMovementCoordinates
+  def initialize(turtle_to_move, steps_to_walk)
+    positions_interval = AscendingInterval.new
+    axis_rail = HorizontalRail.new(turtle_to_move, AscendingInterval.new, steps_to_walk)
+    super(positions_interval, axis_rail)
+  end
+end
+
+class UpMovementCoordinates < TurtleMovementCoordinates
+  def initialize(turtle_to_move, steps_to_walk)
+    positions_interval = DescendingInterval.new
+    axis_rail = VerticalRail.new(turtle_to_move, DescendingInterval.new, steps_to_walk)
+    super(positions_interval, axis_rail)
+  end
+end
+
+class DownMovementCoordinates < TurtleMovementCoordinates
+  def initialize(turtle_to_move, steps_to_walk)
+    positions_interval = AscendingInterval.new
+    axis_rail = VerticalRail.new(turtle_to_move, AscendingInterval.new, steps_to_walk)
+    super(positions_interval, axis_rail)
+  end
+end
+
+class AxisRail
+  def initialize(turtle, positions_interval, limit_position)
+    @turtle_to_move = turtle
+    @positions_interval = positions_interval
+    @limit_position = limit_position
   end
 
-  def positions
-    @positions_interval.elements(start_position, end_position)
+  def coordinates(positions_interval)
+    positions_in_interval(positions_interval).map { |position| intersect(position) }
   end
 
   def start_position
@@ -147,90 +188,11 @@ class TurtleMovementCoordinates
   end
 
   def end_position
-    start_position_with_offset(@steps_to_walk)
+    start_position_with_offset(@limit_position)
   end
 
-  def start_position_with_offset(offset)
-    @axis_rail.current_position_with_offset(offset)
-  end
-end
-
-class MovementCoordinates
-  def self.create(turtle_to_move, steps_to_walk)
-    raise NotImplementedError, 'Implement this'
-  end
-end
-
-class LeftMovementCoordinates < MovementCoordinates
-  def self.create(turtle_to_move, steps_to_walk)
-    positions = HorizontalDescendingPositions.new(turtle_to_move)
-    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
-  end
-end
-
-class RightMovementCoordinates < MovementCoordinates
-  def self.create(turtle_to_move, steps_to_walk)
-    positions = HorizontalAscendingPositions.new(turtle_to_move)
-    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
-  end
-end
-
-class UpMovementCoordinates < MovementCoordinates
-  def self.create(turtle_to_move, steps_to_walk)
-    positions = VerticalDescendingPositions.new(turtle_to_move)
-    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
-  end
-end
-
-class DownMovementCoordinates < MovementCoordinates
-  def self.create(turtle_to_move, steps_to_walk)
-    positions = VerticalAscendingPositions.new(turtle_to_move)
-    TurtleMovementCoordinates.new(turtle_to_move, steps_to_walk, positions.positions_interval, positions.axis_rail)
-  end
-end
-
-class Positions
-  attr_reader :positions_interval, :axis_rail
-end
-
-class HorizontalDescendingPositions < Positions
-  def initialize(turtle_to_move)
-    @positions_interval = DescendingInterval.new
-    @axis_rail = HorizontalRail.new(turtle_to_move, NegativeOffset.new)
-  end
-end
-
-class HorizontalAscendingPositions < Positions
-  def initialize(turtle_to_move)
-    @positions_interval = AscendingInterval.new
-    @axis_rail = HorizontalRail.new(turtle_to_move, PositiveOffset.new)
-  end
-end
-
-class VerticalDescendingPositions < Positions
-  def initialize(turtle_to_move)
-    @positions_interval = DescendingInterval.new
-    @axis_rail = VerticalRail.new(turtle_to_move, NegativeOffset.new)
-  end
-end
-
-class VerticalAscendingPositions < Positions
-  def initialize(turtle_to_move)
-    @positions_interval = AscendingInterval.new
-    @axis_rail = VerticalRail.new(turtle_to_move, PositiveOffset.new)
-  end
-end
-
-
-
-class AxisRail
-  def initialize(turtle, offset_direction)
-    @turtle_to_move = turtle
-    @position_offset = offset_direction
-  end
-
-  def current_position_with_offset(offset)
-    @position_offset.from(current_position_on_axis, offset)
+  def positions_in_interval(positions_interval)
+    positions_interval.elements(start_position, end_position)
   end
 
   def current_position_on_axis
@@ -239,6 +201,16 @@ class AxisRail
 
   def intersect(position)
     raise NotImplementedError, 'Implement this'
+  end
+
+  private
+
+  def start_position_with_offset(offset)
+    current_position_with_offset(offset)
+  end
+
+  def current_position_with_offset(offset)
+    @positions_interval.from(current_position_on_axis, offset)
   end
 end
 
@@ -266,21 +238,17 @@ class AscendingInterval
   def elements(start_position, end_position)
     (start_position..end_position)
   end
+
+  def from(start, steps)
+    start + steps
+  end
 end
 
 class DescendingInterval
   def elements(start_position, end_position)
     start_position.downto(end_position)
   end
-end
 
-class PositiveOffset
-  def from(start, steps)
-    start + steps
-  end
-end
-
-class NegativeOffset
   def from(start, steps)
     start - steps
   end
