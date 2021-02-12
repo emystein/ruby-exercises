@@ -1,31 +1,4 @@
 # https://www.codewars.com/kata/5279f6fe5ab7f447890006a7
-
-def blocks_with_neighbours(array)
-  if array.size >= 3
-    same_first_elements_grouped(array[1..array.size - 2])
-  else
-    []
-  end
-end
-
-def same_first_elements_grouped(array)
-  result = []
-
-  until array.empty?
-    first_same_elements = array.take_while { |element| element == array.first }
-
-    result << first_same_elements
-
-    array = array.drop(first_same_elements.size)
-  end
-
-  result
-end
-
-def reduce_duplicates(array)
-  same_first_elements_grouped(array).flat_map(&:uniq)
-end
-
 def pick_peaks(array)
   totals = { 'pos' => [], 'peaks' => [] }
 
