@@ -4,25 +4,21 @@ def pick_peaks(array)
 
   possible_peak_positions(array)
     .map { |index| PeakPickerElement.new(array, index) }
-    .filter { |element| element.peak? }
-    .each.map do |element|
-    totals['pos'] << element.index
-    totals['peaks'] << element.value
-  end
+    .filter(&:peak?)
+    .each.map do |peak|
+      totals['pos'] << peak.index
+      totals['peaks'] << peak.value
+    end
 
   totals
 end
 
 def possible_peak_positions(array)
-  if array.size > 2
-    (1..array.size - 2)
-  else
-    []
-  end
+  array.size > 2 ? (1..array.size - 2) : []
 end
 
 class PeakPickerElement
-  attr_reader :array, :index, :value
+  attr_reader :index, :value
 
   def initialize(array, index)
     @array = array
