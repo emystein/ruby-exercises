@@ -27,17 +27,17 @@ def reduce_duplicates(array)
 end
 
 def pick_peaks(array)
-  result = { pos: [], peaks: [] }
+  totals = { pos: [], peaks: [] }
 
   possible_peak_positions(array)
     .map { |index| PeakPickerElement.new(array, index) }
     .filter(&:peak?)
-    .each do |element|
-      result[:pos] << element.index
-      result[:peaks] << element.value
-    end
+    .reduce(totals) do |reduce, element|
+    reduce[:pos] << element.index
+    reduce[:peaks] << element.value
+  end
 
-  result
+  totals
 end
 
 def possible_peak_positions(array)
@@ -78,7 +78,9 @@ class PeakPickerElement
   end
 
   def next_different
-    @array[last_index_of_same_value + 1]
+    consecutive_with_same_value = @array[@index..].take_while { |element| element == @array[@index] }
+
+    @array[@index + consecutive_with_same_value.size]
   end
 
   private
@@ -93,13 +95,5 @@ class PeakPickerElement
 
   def before_penultimate?
     @index < @array.size - 1
-  end
-
-  def last_index_of_same_value
-    last_index = @index
-
-    last_index += 1 while @array[@index] == @array[last_index + 1]
-
-    last_index
   end
 end
