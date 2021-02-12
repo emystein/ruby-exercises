@@ -27,27 +27,79 @@ def reduce_duplicates(array)
 end
 
 def pick_peaks(array)
-  pos = []
-  peaks = []
+  result = { pos: [], peaks: [] }
 
-  if array.size > 2
-    (1..array.size - 2).each do |i|
-      if local_maxima?(array, i)
-        pos << i
-        peaks << array[i]
-      end
+  possible_peak_positions(array)
+    .map { |index| PeakPickerElement.new(array, index) }
+    .filter(&:peak?)
+    .each do |element|
+      result[:pos] << element.index
+      result[:peaks] << element.value
     end
-  end
 
-  { pos: pos, peaks: peaks }
+  result
 end
 
-def local_maxima?(array, index)
-  last_index = index
+def possible_peak_positions(array)
+  if array.size > 2
+    (1..array.size - 2)
+  else
+    []
+  end
+end
 
-  while array[index] == array[index + 1]
-    last_index += 1
+class PeakPickerElement
+  attr_reader :array, :index, :value
+
+  def initialize(array, index)
+    @array = array
+    @index = index
+    @value = @array[@index]
   end
 
-  array[index - 1] < array[index] && array[last_index] > array[last_index + 1]
+  def peak?
+    local_maxima_position_candidate? && greater_than_neighbours?
+  end
+
+  def greater_than_neighbours?
+    greater_than_previous? && greater_than_next_different?
+  end
+
+  def greater_than_previous?
+    @value > previous
+  end
+
+  def greater_than_next_different?
+    @value > next_different
+  end
+
+  def previous
+    @array[@index - 1]
+  end
+
+  def next_different
+    @array[last_index_of_same_value + 1]
+  end
+
+  private
+
+  def local_maxima_position_candidate?
+    after_first? && before_penultimate?
+  end
+
+  def after_first?
+    @index.positive?
+  end
+
+  def before_penultimate?
+    @index < @array.size - 1
+  end
+
+  def last_index_of_same_value
+    last_index = @index
+
+    last_index += 1 while @array[@index] == @array[last_index + 1]
+
+    last_index
+  end
 end
