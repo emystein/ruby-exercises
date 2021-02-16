@@ -11,23 +11,18 @@ end
 
 class LowercaseStringStats
   def initialize(string)
-    @letter_count = string.chars
-                           .filter { |c| c != ' ' }
-                           .filter { |c| c.match(/[[:lower:]]/) }
-                           .group_by(&:downcase)
-                           .transform_values(&:size)
-  end
-
-  def count
-    @letter_count
-  end
-
-  def letter_count(letter)
-    @letter_count[letter] ||= 0
+    @count_by_letter = string.chars
+                             .filter { |c| c.match(/[[:lower:]]/) }
+                             .group_by(&:downcase)
+                             .transform_values(&:size)
   end
 
   def letters
-    @letter_count.keys
+    @count_by_letter.keys
+  end
+
+  def count_by_letter(letter)
+    @count_by_letter[letter] ||= 0
   end
 
   def letters_diff(other_stats)
@@ -76,15 +71,15 @@ class LetterOccurrenceDiffFactory
   end
 
   def for(letter)
-    if @string1_stats.letter_count(letter) > @string2_stats.letter_count(letter)
+    if @string1_stats.count_by_letter(letter) > @string2_stats.count_by_letter(letter)
       string_number = '1'
-      letter_count = @string1_stats.letter_count(letter)
-    elsif @string1_stats.letter_count(letter) < @string2_stats.letter_count(letter)
+      letter_count = @string1_stats.count_by_letter(letter)
+    elsif @string1_stats.count_by_letter(letter) < @string2_stats.count_by_letter(letter)
       string_number = '2'
-      letter_count = @string2_stats.letter_count(letter)
+      letter_count = @string2_stats.count_by_letter(letter)
     else
       string_number = '='
-      letter_count = @string1_stats.letter_count(letter)
+      letter_count = @string1_stats.count_by_letter(letter)
     end
 
     LetterOccurrenceDiff.new(string_number, letter, letter_count)

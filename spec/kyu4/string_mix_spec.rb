@@ -5,7 +5,11 @@ describe 'LowercaseStringStats' do
   it 'count by letter' do
     stats = LowercaseStringStats.new('Are they here')
 
-    expect(stats.count).to eq({'r' => 2, 'e' => 4, 't' => 1, 'h' => 2, 'y' => 1})
+    expect(stats.count_by_letter('r')).to eq(2)
+    expect(stats.count_by_letter('e')).to eq(4)
+    expect(stats.count_by_letter('t')).to eq(1)
+    expect(stats.count_by_letter('h')).to eq(2)
+    expect(stats.count_by_letter('y')).to eq(1)
   end
 end
 
