@@ -31,19 +31,12 @@ class StringStats
            .filter { |_k, v| v >= min }
   end
 
-  def insersect(stats_to_intersect)
-    StringStatsIntersection.new(self, stats_to_intersect)
-  end
-end
+  def letters_diff(other_stats)
+    common_letters = letters.intersection(other_stats.letters)
 
-class StringStatsIntersection
-  def initialize(stats1, stats2)
-    @common_letters = stats1.letters.intersection(stats2.letters)
-    @letter_diff_factory = LetterDiffFactory.new(stats1, stats2)
-  end
+    letter_diff_factory = LetterOccurrenceDiffFactory.new(self, other_stats)
 
-  def letters_diff
-    @common_letters.map { |letter| @letter_diff_factory.for(letter) }
+    common_letters.map { |letter| letter_diff_factory.for(letter) }
   end
 end
 
@@ -52,7 +45,7 @@ class StringCompare
     string1_stats = StringStats.new(string1)
     string2_stats = StringStats.new(string2)
 
-    letters_diff = string1_stats.insersect(string2_stats).letters_diff
+    letters_diff = string1_stats.letters_diff(string2_stats)
 
     StringDiff.new(letters_diff.filter { |letter_diff| letter_diff.occurrences >= min_occurrences })
   end
@@ -72,7 +65,7 @@ class StringDiff
   end
 end
 
-class LetterDiffFactory
+class LetterOccurrenceDiffFactory
   def initialize(string1_stats, string2_stats)
     @string1_stats = string1_stats
     @string2_stats = string2_stats
@@ -90,21 +83,13 @@ class LetterDiffFactory
       letter_count = @string1_stats.letter_count(letter)
     end
 
-    LetterDiff.new(string_number, letter, letter_count)
+    LetterOccurrenceDiff.new(string_number, letter, letter_count)
   end
 end
 
-class LetterDiff
-  attr_reader :string_number, :letter, :occurrences
+LetterOccurrenceDiff = Struct.new(:string_number, :letter, :occurrences)
 
-  def initialize(string_number, letter, occurrences)
-    @string_number = string_number
-    @letter = letter
-    @occurrences = occurrences
-  end
-end
-
-class StringNumberAndLetterRepetitionsFormat
+class StringNumberAndLetterRepetitions
   def format(diff)
     sorted(diff).map { |d| "#{d.string_number}:#{d.letter * d.occurrences}" }.join('/')
   end

@@ -27,6 +27,6 @@ describe 'StringCompare' do
 
     result = compare.diff_with_min_occurrences('Are they here', 'yes, they are here', 2)
 
-    expect(result.format(StringNumberAndLetterRepetitionsFormat.new)).to eq '2:eeeee/2:yy/=:hh/=:rr'
+    expect(result.format(StringNumberAndLetterRepetitions.new)).to eq '2:eeeee/2:yy/=:hh/=:rr'
   end
 end
