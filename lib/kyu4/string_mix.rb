@@ -1,6 +1,6 @@
 # https://www.codewars.com/kata/5629db57620258aa9d000014
 
-def string_mix(string1, string2)
+def mix(string1, string2)
   compare = StringCompare.new
 
   result = compare.diff_with_min_occurrences(string1, string2, 2)

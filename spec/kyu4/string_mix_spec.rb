@@ -43,7 +43,7 @@ describe 'string_mix' do
 
   with_them do
     it 'mix' do
-      expect(string_mix(string1, string2)).to eq(expected)
+      expect(mix(string1, string2)).to eq(expected)
     end
   end
 end
