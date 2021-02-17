@@ -28,41 +28,23 @@ describe 'string stats' do
   end
 end
 
-describe 'merge string stats' do
+describe 'merge string stats by letter occurrences' do
   where(:stats1, :stats2, :expected) do
     [
-      [{ 'a' => 1 }, {}, { 'a' => ['1', 1] }],
-      [{}, { 'a' => 1 }, { 'a' => ['2', 1] }],
-      [{ 'a' => 1 }, { 'b' => 1 }, { 'a' => ['1', 1], 'b' => ['2', 1] }],
-      [{ 'a' => 1 }, { 'a' => 1 }, { 'a' => ['=', 1] }],
-      [{ 'a' => 2 }, { 'a' => 1 }, { 'a' => ['1', 2] }],
-      [{ 'a' => 1 }, { 'a' => 2 }, { 'a' => ['2', 2] }],
-      [{ 'a' => 1, 'b' => 1 }, { 'a' => 2, 'b' => 2 }, { 'a' => ['2', 2], 'b' => ['2', 2] }],
-      [{ 'a' => 2, 'b' => 2 }, { 'a' => 1, 'b' => 1 }, { 'a' => ['1', 2], 'b' => ['1', 2] }]
+      [{ 'a' => 1 }, {}, { 1 => [%w[1 a]] }],
+      [{}, { 'a' => 1 }, { 1 => [%w[2 a]] }],
+      [{ 'a' => 1 }, { 'b' => 1 }, { 1 => [%w[1 a], %w[2 b]] }],
+      [{ 'a' => 1 }, { 'a' => 1 }, { 1 => [%w[= a]] }],
+      [{ 'a' => 2 }, { 'a' => 1 }, { 2 => [%w[1 a]] }],
+      [{ 'a' => 1 }, { 'a' => 2 }, { 2 => [%w[2 a]] }],
+      [{ 'a' => 1, 'b' => 1 }, { 'a' => 2, 'b' => 2 }, { 2 => [%w[2 a], %w[2 b]] }],
+      [{ 'a' => 2, 'b' => 2 }, { 'a' => 1, 'b' => 1 }, { 2 => [%w[1 a], %w[1 b]] }]
     ]
   end
 
   with_them do
     it 'merge' do
       expect(merge_stats(stats1, '1', stats2, '2')).to eq(expected)
-    end
-  end
-end
-
-describe 'merged string stats by occurrence' do
-  where(:stats, :expected) do
-    [
-      [{ 'a' => ['1', 1] }, { 1 => [%w[1 a]] }],
-      [{ 'a' => ['1', 1], 'b' => ['1', 3] }, { 3 => [%w[1 b]], 1 => [%w[1 a]] }],
-      [{ 'a' => ['1', 2], 'b' => ['2', 2], 'c' => ['=', 1] }, { 2 => [%w[1 a], %w[2 b]], 1 => [%w[= c]] }],
-      [{ 'b' => ['2', 2], 'a' => ['1', 2], 'c' => ['=', 1] }, { 2 => [%w[1 a], %w[2 b]], 1 => [%w[= c]] }],
-      [{ 'b' => ['2', 2], 'c' => ['=', 1], 'a' => ['1', 2] }, { 2 => [%w[1 a], %w[2 b]], 1 => [%w[= c]] }]
-    ]
-  end
-
-  with_them do
-    it 'transform merged' do
-      expect(merged_stats_by_letter_occurrence(stats)).to eq(expected)
     end
   end
 end

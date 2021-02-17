@@ -10,9 +10,7 @@ def mix(string1, string2)
 
   format_occurrences(
     sort_merged_stats(
-      merged_stats_by_letter_occurrence(
-        merge_stats(string1_stats, '1', string2_stats, '2')
-      )
+      merge_stats(string1_stats, '1', string2_stats, '2')
     )
   )
 end
@@ -31,38 +29,25 @@ end
 def merge_stats(stats1, string_number1, stats2, string_number2)
   letters = (stats1.keys + stats2.keys).uniq
 
-  Hash[
-    letters.map do |letter|
-      occurrences_in_string1 = stats1[letter] || 0
-      occurrences_in_string2 = stats2[letter] || 0
+  by_occurrences = {}
 
-      maximum = ['=', occurrences_in_string1]
+  letters.each do |letter|
+    occurrences_of_letter = stats1[letter] || 0
+    occurrences_in_string2 = stats2[letter] || 0
+    string_number = '='
 
-      if occurrences_in_string1 > occurrences_in_string2
-        maximum = [string_number1, occurrences_in_string1]
-      elsif occurrences_in_string1 < occurrences_in_string2
-        maximum = [string_number2, occurrences_in_string2]
-      end
-
-      [letter, maximum]
+    if occurrences_of_letter > occurrences_in_string2
+      string_number = string_number1
+    elsif occurrences_of_letter < occurrences_in_string2
+      occurrences_of_letter = occurrences_in_string2
+      string_number = string_number2
     end
-  ]
-end
 
-def merged_stats_by_letter_occurrence(merged_stats)
-  by_letter_occurrence = {}
-
-  merged_stats.each do |letter, v|
-    pair = [v[0], letter]
-
-    if by_letter_occurrence.key?(v[1])
-      by_letter_occurrence[v[1]] << pair
-    else
-      by_letter_occurrence[v[1]] = [pair]
-    end
+    by_occurrences[occurrences_of_letter] ||= []
+    by_occurrences[occurrences_of_letter] << [string_number, letter]
   end
 
-  by_letter_occurrence.transform_values(&:sort)
+  by_occurrences.transform_values(&:sort)
 end
 
 def sort_merged_stats(merged_stats)
