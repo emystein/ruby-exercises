@@ -73,7 +73,10 @@ end
 describe 'strings diffs' do
   where(:merged_stats, :expected) do
     [
-      [{ 3 => [%w[2 b], %w[1 a]], 2 => [%w[= c]] }, [['1', 'a', 3], ['2', 'b', 3], ['=', 'c', 2]]]
+      [{ 3 => [%w[2 b], %w[1 a]], 2 => [%w[= c]] },
+       [LetterOccurrenceInString.new('1', 'a', 3),
+        LetterOccurrenceInString.new('2', 'b', 3),
+        LetterOccurrenceInString.new('=', 'c', 2)]]
     ]
   end
 
@@ -84,6 +87,10 @@ describe 'strings diffs' do
   end
 
   it 'format' do
-    expect(format_occurrences([['1', 'a', 3], ['2', 'b', 3], ['=', 'c', 2]])).to eq('1:aaa/2:bbb/=:cc')
+    occurrences = [LetterOccurrenceInString.new('1', 'a', 3),
+                   LetterOccurrenceInString.new('2', 'b', 3),
+                   LetterOccurrenceInString.new('=', 'c', 2)]
+
+    expect(format_occurrences(occurrences)).to eq('1:aaa/2:bbb/=:cc')
   end
 end

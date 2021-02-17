@@ -3,6 +3,7 @@
 def mix(string1, string2)
   string1_stats = string_stats_with_mininum_occurrences(string1, 2)
   string2_stats = string_stats_with_mininum_occurrences(string2, 2)
+
   format_occurrences(
     sort_merged_stats(
       merged_stats_by_letter_occurrence(
@@ -65,15 +66,19 @@ def merged_stats_by_letter_occurrence(merged_stats)
 end
 
 def sort_merged_stats(merged_stats)
-  sort_by_letter_occurrence(merged_stats).flat_map do |occurrence, string_number_and_letter|
-    string_number_and_letter.sort.map { |v| v.append(occurrence) }
+  sort_by_letter_occurrence(merged_stats).reverse.flat_map do |occurrence, string_number_and_letter|
+    string_number_and_letter.sort.map { |v| LetterOccurrenceInString.new(v[0], v[1], occurrence) }
   end
 end
 
 def sort_by_letter_occurrence(merged_stats)
-  merged_stats.to_a.sort.reverse
+  merged_stats.to_a.sort
 end
 
 def format_occurrences(occurrences)
-  occurrences.map { |s| "#{s[0]}:#{s[1] * s[2]}" }.join('/')
+  occurrences.map do |occurrence|
+    "#{occurrence.string_number}:#{occurrence.letter * occurrence.occurrences}"
+  end.join('/')
 end
+
+LetterOccurrenceInString = Struct.new(:string_number, :letter, :occurrences)
