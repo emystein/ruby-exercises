@@ -24,10 +24,7 @@ describe 'string stats' do
     expect(string_stats('aabbbc')).to eq({ 'a' => 2, 'b' => 3, 'c' => 1 })
   end
   it 'filter stats by letter minimum occurrences' do
-    expect(filter_mininum_occurrences(string_stats('aabbbc'), 2)).to eq({ 'a' => 2, 'b' => 3 })
-  end
-  it 'calculate stats with mininmum occurrences' do
-    expect(string_stats_with_mininum_occurrences('aabbbc', 2)).to eq({ 'a' => 2, 'b' => 3 })
+    expect(filter_minimum_occurrences(string_stats('aabbbc'), 2)).to eq({ 'a' => 2, 'b' => 3 })
   end
 end
 

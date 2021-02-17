@@ -1,8 +1,12 @@
 # https://www.codewars.com/kata/5629db57620258aa9d000014
 
 def mix(string1, string2)
-  string1_stats = string_stats_with_mininum_occurrences(string1, 2)
-  string2_stats = string_stats_with_mininum_occurrences(string2, 2)
+  letter_minimum_occurrences = 2
+
+  string1_stats =
+    filter_minimum_occurrences(string_stats(string1), letter_minimum_occurrences)
+  string2_stats =
+    filter_minimum_occurrences(string_stats(string2), letter_minimum_occurrences)
 
   format_occurrences(
     sort_merged_stats(
@@ -13,10 +17,6 @@ def mix(string1, string2)
   )
 end
 
-def string_stats_with_mininum_occurrences(string, letter_minimum_occurrences)
-  filter_mininum_occurrences(string_stats(string), letter_minimum_occurrences)
-end
-
 def string_stats(string)
   string.chars
         .select { |c| c.match(/[[:lower:]]/) }
@@ -24,7 +24,7 @@ def string_stats(string)
         .transform_values(&:size)
 end
 
-def filter_mininum_occurrences(stats, letter_minimum_occurrences)
+def filter_minimum_occurrences(stats, letter_minimum_occurrences)
   stats.select { |letter, occurrences| occurrences >= letter_minimum_occurrences }
 end
 
