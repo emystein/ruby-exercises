@@ -1,119 +1,79 @@
 # https://www.codewars.com/kata/5629db57620258aa9d000014
 
 def mix(string1, string2)
-  compare = StringCompare.new
-
-  result = compare.diff_with_min_occurrences(string1, string2, 2)
-
-  result.sort_by(LetterRepetitionsDescendingOrder.new)
-        .format(JoinStringNumberAndLetterRepetitions.new)
+  string1_stats = string_stats_with_mininum_occurrences(string1, 2)
+  string2_stats = string_stats_with_mininum_occurrences(string2, 2)
+  format_occurrences(
+    sort_merged_stats(
+      merged_stats_by_letter_occurrence(
+        merge_stats(string1_stats, '1', string2_stats, '2')
+      )
+    )
+  )
 end
 
-class LowercaseStringStats
-  def initialize(string)
-    @count_by_letter = string.chars
-                             .filter { |c| c.match(/[[:lower:]]/) }
-                             .group_by(&:downcase)
-                             .transform_values(&:size)
-  end
-
-  def letters
-    @count_by_letter.keys
-  end
-
-  def count_by_letter(letter)
-    @count_by_letter[letter] ||= 0
-  end
-
-  def letters_diff(other_stats)
-    common_letters = letters.union(other_stats.letters)
-
-    letter_diff_factory = LetterOccurrenceDiffFactory.new(self, other_stats)
-
-    common_letters.map { |letter| letter_diff_factory.for(letter) }
-  end
+def string_stats_with_mininum_occurrences(string, letter_minimum_occurrences)
+  filter_mininum_occurrences(string_stats(string), letter_minimum_occurrences)
 end
 
-class StringCompare
-  def diff_with_min_occurrences(string1, string2, min_occurrences)
-    string1_stats = LowercaseStringStats.new(string1)
-    string2_stats = LowercaseStringStats.new(string2)
-
-    letters_diff = string1_stats.letters_diff(string2_stats)
-
-    StringDiff.new(letters_diff.filter { |letter_diff| letter_diff.occurrences >= min_occurrences })
-  end
+def string_stats(string)
+  string.chars
+        .select { |c| c.match(/[[:lower:]]/) }
+        .group_by(&:downcase)
+        .transform_values(&:size)
 end
 
-class StringDiff
-  def initialize(diff)
-    @letter_diffs = diff
-  end
-
-  def letters
-    @letter_diffs.map(&:letter)
-  end
-
-  def sort_by(order_to_apply)
-    @letter_diffs = order_to_apply.sort(@letter_diffs)
-    self
-  end
-
-  def format(format_to_apply)
-    format_to_apply.format(@letter_diffs)
-  end
+def filter_mininum_occurrences(stats, letter_minimum_occurrences)
+  stats.select { |letter, occurrences| occurrences >= letter_minimum_occurrences }
 end
 
-class LetterOccurrenceDiffFactory
-  def initialize(string1_stats, string2_stats)
-    @string1_stats = string1_stats
-    @string2_stats = string2_stats
-  end
+def merge_stats(stats1, string_number1, stats2, string_number2)
+  letters = (stats1.keys + stats2.keys).uniq
 
-  def for(letter)
-    if @string1_stats.count_by_letter(letter) > @string2_stats.count_by_letter(letter)
-      string_number = '1'
-      letter_count = @string1_stats.count_by_letter(letter)
-    elsif @string1_stats.count_by_letter(letter) < @string2_stats.count_by_letter(letter)
-      string_number = '2'
-      letter_count = @string2_stats.count_by_letter(letter)
-    else
-      string_number = '='
-      letter_count = @string1_stats.count_by_letter(letter)
-    end
+  Hash[
+    letters.map do |letter|
+      occurrences_in_string1 = stats1[letter] || 0
+      occurrences_in_string2 = stats2[letter] || 0
 
-    LetterOccurrenceDiff.new(string_number, letter, letter_count)
-  end
-end
+      maximum = ['=', occurrences_in_string1]
 
-LetterOccurrenceDiff = Struct.new(:string_number, :letter, :occurrences) {
-  def format(format_to_apply)
-    format_to_apply.format(self)
-  end
-}
-
-class JoinStringNumberAndLetterRepetitions
-  def format(elements)
-    elements.map { |element| element.format(StringNumberAndLetterRepetitions.new) }.join('/')
-  end
-end
-
-class StringNumberAndLetterRepetitions
-  def format(letter_diff)
-    "#{letter_diff.string_number}:#{letter_diff.letter * letter_diff.occurrences}"
-  end
-end
-
-class LetterRepetitionsDescendingOrder
-  def sort(diff)
-    by_occurrences = diff.group_by(&:occurrences)
-
-    occurrences_desc = by_occurrences.keys.sort.reverse
-
-    occurrences_desc.flat_map do |occurrences|
-      by_occurrences[occurrences].sort_by do |letter_diff|
-        letter_diff.format(StringNumberAndLetterRepetitions.new)
+      if occurrences_in_string1 > occurrences_in_string2
+        maximum = [string_number1, occurrences_in_string1]
+      elsif occurrences_in_string1 < occurrences_in_string2
+        maximum = [string_number2, occurrences_in_string2]
       end
+
+      [letter, maximum]
+    end
+  ]
+end
+
+def merged_stats_by_letter_occurrence(merged_stats)
+  by_letter_occurrence = {}
+
+  merged_stats.each do |letter, v|
+    pair = [v[0], letter]
+
+    if by_letter_occurrence.key?(v[1])
+      by_letter_occurrence[v[1]] << pair
+    else
+      by_letter_occurrence[v[1]] = [pair]
     end
   end
+
+  by_letter_occurrence.transform_values(&:sort)
+end
+
+def sort_merged_stats(merged_stats)
+  sort_by_letter_occurrence(merged_stats).flat_map do |occurrence, string_number_and_letter|
+    string_number_and_letter.sort.map { |v| v.append(occurrence) }
+  end
+end
+
+def sort_by_letter_occurrence(merged_stats)
+  merged_stats.to_a.sort.reverse
+end
+
+def format_occurrences(occurrences)
+  occurrences.map { |s| "#{s[0]}:#{s[1] * s[2]}" }.join('/')
 end
