@@ -23,28 +23,25 @@ describe 'string stats' do
   it 'calculate stats' do
     expect(string_stats('aabbbc')).to eq({ 'a' => 2, 'b' => 3, 'c' => 1 })
   end
-  it 'filter stats by letter minimum occurrences' do
-    expect(filter_minimum_occurrences(string_stats('aabbbc'), 2)).to eq({ 'a' => 2, 'b' => 3 })
-  end
 end
 
 describe 'merge string stats by letter occurrences' do
-  where(:stats1, :stats2, :expected) do
+  where(:string1, :string2, :min_occurrences, :expected) do
     [
-      [{ 'a' => 1 }, {}, { 1 => [%w[1 a]] }],
-      [{}, { 'a' => 1 }, { 1 => [%w[2 a]] }],
-      [{ 'a' => 1 }, { 'b' => 1 }, { 1 => [%w[1 a], %w[2 b]] }],
-      [{ 'a' => 1 }, { 'a' => 1 }, { 1 => [%w[= a]] }],
-      [{ 'a' => 2 }, { 'a' => 1 }, { 2 => [%w[1 a]] }],
-      [{ 'a' => 1 }, { 'a' => 2 }, { 2 => [%w[2 a]] }],
-      [{ 'a' => 1, 'b' => 1 }, { 'a' => 2, 'b' => 2 }, { 2 => [%w[2 a], %w[2 b]] }],
-      [{ 'a' => 2, 'b' => 2 }, { 'a' => 1, 'b' => 1 }, { 2 => [%w[1 a], %w[1 b]] }]
+      ['a', '', 1, { 1 => [%w[1 a]] }],
+      ['', 'a', 1, { 1 => [%w[2 a]] }],
+      ['a', 'b', 1, { 1 => [%w[1 a], %w[2 b]] }],
+      ['a', 'a', 1, { 1 => [%w[= a]] }],
+      ['aa', 'a', 1, { 2 => [%w[1 a]] }],
+      ['a', 'aa', 1, { 2 => [%w[2 a]] }],
+      ['aabbc', 'aaabbbc', 2, { 3 => [%w[2 a], %w[2 b]] }],
+      ['aaabbbc', 'abc', 2, { 3 => [%w[1 a], %w[1 b]] }]
     ]
   end
 
   with_them do
     it 'merge' do
-      expect(merge_stats(stats1, '1', stats2, '2')).to eq(expected)
+      expect(merge_stats(string1, '1', string2, '2', min_occurrences)).to eq(expected)
     end
   end
 end

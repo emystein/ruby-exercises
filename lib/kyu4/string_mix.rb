@@ -3,14 +3,9 @@
 def mix(string1, string2)
   letter_minimum_occurrences = 2
 
-  string1_stats =
-    filter_minimum_occurrences(string_stats(string1), letter_minimum_occurrences)
-  string2_stats =
-    filter_minimum_occurrences(string_stats(string2), letter_minimum_occurrences)
-
   format_occurrences(
     sort_merged_stats(
-      merge_stats(string1_stats, '1', string2_stats, '2')
+      merge_stats(string1, '1', string2, '2', letter_minimum_occurrences)
     )
   )
 end
@@ -22,11 +17,9 @@ def string_stats(string)
         .transform_values(&:size)
 end
 
-def filter_minimum_occurrences(stats, letter_minimum_occurrences)
-  stats.select { |letter, occurrences| occurrences >= letter_minimum_occurrences }
-end
-
-def merge_stats(stats1, string_number1, stats2, string_number2)
+def merge_stats(string1, string_number1, string2, string_number2, minimum_occurrences)
+  stats1 = string_stats(string1)
+  stats2 = string_stats(string2)
   letters = (stats1.keys + stats2.keys).uniq
 
   by_occurrences = {}
@@ -43,8 +36,10 @@ def merge_stats(stats1, string_number1, stats2, string_number2)
       string_number = string_number2
     end
 
-    by_occurrences[occurrences_of_letter] ||= []
-    by_occurrences[occurrences_of_letter] << [string_number, letter]
+    if occurrences_of_letter >= minimum_occurrences
+      by_occurrences[occurrences_of_letter] ||= []
+      by_occurrences[occurrences_of_letter] << [string_number, letter]
+    end
   end
 
   by_occurrences.transform_values(&:sort)
