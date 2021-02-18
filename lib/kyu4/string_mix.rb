@@ -1,64 +1,64 @@
 # https://www.codewars.com/kata/5629db57620258aa9d000014
 
 def mix(string1, string2)
-  letter_minimum_occurrences = 2
+  occurrences1 = string_stats(string1)
+  occurrences2 = string_stats(string2)
 
-  format_occurrences(
-    sort_merged_stats(
-      merge_stats(string1, '1', string2, '2', letter_minimum_occurrences)
-    )
-  )
+  letters = (occurrences1.keys + occurrences2.keys).uniq
+
+  maximum_occurrences = {}
+
+  letters.each do |letter|
+    letter_occurrences = maximum_occurrences(letter, occurrences1, occurrences2)
+
+    if letter_occurrences.occurrences >= 2
+      maximum_occurrences[letter_occurrences.occurrences] ||= []
+      maximum_occurrences[letter_occurrences.occurrences] << letter_occurrences
+    end
+  end
+
+  result = maximum_occurrences.transform_values(&:sort)
+                              .to_a.sort.reverse
+                              .flat_map { |_occurrences, letter_occurrences_in_string| letter_occurrences_in_string }
+
+  result.map(&:to_s).join('/')
 end
 
 def string_stats(string)
-  string.chars
-        .select { |c| c.match(/[[:lower:]]/) }
-        .group_by(&:downcase)
-        .transform_values(&:size)
+  stats = string.chars
+                .select { |c| c.match(/[[:lower:]]/) }
+                .group_by(&:downcase)
+                .transform_values(&:size)
+
+  stats.default = 0
+
+  stats
 end
 
-def merge_stats(string1, string_number1, string2, string_number2, minimum_occurrences)
-  stats1 = string_stats(string1)
-  stats2 = string_stats(string2)
-  letters = (stats1.keys + stats2.keys).uniq
-
-  by_occurrences = {}
-
-  letters.each do |letter|
-    occurrences_of_letter = stats1[letter] || 0
-    occurrences_in_string2 = stats2[letter] || 0
-    string_number = '='
-
-    if occurrences_of_letter > occurrences_in_string2
-      string_number = string_number1
-    elsif occurrences_of_letter < occurrences_in_string2
-      occurrences_of_letter = occurrences_in_string2
-      string_number = string_number2
-    end
-
-    if occurrences_of_letter >= minimum_occurrences
-      by_occurrences[occurrences_of_letter] ||= []
-      by_occurrences[occurrences_of_letter] << [string_number, letter]
-    end
-  end
-
-  by_occurrences.transform_values(&:sort)
-end
-
-def sort_merged_stats(merged_stats)
-  sort_by_letter_occurrence(merged_stats).reverse.flat_map do |occurrence, string_number_and_letter|
-    string_number_and_letter.sort.map { |v| LetterOccurrenceInString.new(v[0], v[1], occurrence) }
+def maximum_occurrences(letter, occurrences1, occurrences2)
+  if occurrences1[letter] > occurrences2[letter]
+    LetterOccurrenceInString.new(occurrences1[letter], '1', letter)
+  elsif occurrences1[letter] < occurrences2[letter]
+    LetterOccurrenceInString.new(occurrences2[letter], '2', letter)
+  else
+    LetterOccurrenceInString.new(occurrences1[letter], '=', letter)
   end
 end
 
-def sort_by_letter_occurrence(merged_stats)
-  merged_stats.to_a.sort
-end
+class LetterOccurrenceInString
+  attr_reader :occurrences, :string_number, :letter
 
-def format_occurrences(occurrences)
-  occurrences.map do |occurrence|
-    "#{occurrence.string_number}:#{occurrence.letter * occurrence.occurrences}"
-  end.join('/')
-end
+  def initialize(occurrences, string_number, letter)
+    @occurrences = occurrences
+    @string_number = string_number
+    @letter = letter
+  end
 
-LetterOccurrenceInString = Struct.new(:string_number, :letter, :occurrences)
+  def <=>(other)
+    [@occurrences, @string_number, @letter] <=> [other.occurrences, other.string_number, other.letter]
+  end
+
+  def to_s
+    "#{@string_number}:#{@letter * @occurrences}"
+  end
+end
