@@ -6,22 +6,11 @@ def mix(string1, string2)
 
   letters = (occurrences1.keys + occurrences2.keys).uniq
 
-  maximum_occurrences = {}
-
-  letters.each do |letter|
-    letter_occurrences = maximum_occurrences(letter, occurrences1, occurrences2)
-
-    if letter_occurrences.occurrences >= 2
-      maximum_occurrences[letter_occurrences.occurrences] ||= []
-      maximum_occurrences[letter_occurrences.occurrences] << letter_occurrences
-    end
-  end
-
-  result = maximum_occurrences.transform_values(&:sort)
-                              .to_a.sort.reverse
-                              .flat_map { |_occurrences, letter_occurrences_in_string| letter_occurrences_in_string }
-
-  result.map(&:to_s).join('/')
+  letters.map { |letter| maximum_occurrences(letter, occurrences1, occurrences2) }
+         .select { |letter_occurrences| letter_occurrences.occurrences > 1 }
+         .sort
+         .map(&:to_s)
+         .join('/')
 end
 
 def string_stats(string)
@@ -55,7 +44,7 @@ class LetterOccurrenceInString
   end
 
   def <=>(other)
-    [@occurrences, @string_number, @letter] <=> [other.occurrences, other.string_number, other.letter]
+    [-@occurrences, @string_number, @letter] <=> [-other.occurrences, other.string_number, other.letter]
   end
 
   def to_s
