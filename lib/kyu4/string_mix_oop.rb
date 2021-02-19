@@ -22,7 +22,9 @@ class LowercaseStringStats
   end
 
   def letter_occurrences(letter)
-    @count_by_letter[letter] ||= 0
+    occurrences = @count_by_letter[letter] ||= 0
+
+    LetterOccurrences.new(letter, occurrences)
   end
 
   def letters_diff(other_stats)
@@ -32,11 +34,9 @@ class LowercaseStringStats
   end
 
   def compare_occurrences_of(letter, stats_compared)
-    letter_occurrences = LetterOccurrences.new(letter, letter_occurrences(letter))
-
-    if letter_occurrences.greater?(stats_compared)
+    if letter_occurrences(letter).greater?(stats_compared)
       MaximumInString1.new(letter, letter_occurrences(letter))
-    elsif letter_occurrences.less?(stats_compared)
+    elsif letter_occurrences(letter).less?(stats_compared)
       MaximumInString2.new(letter, stats_compared.letter_occurrences(letter))
     else
       EqualInBothStrings.new(letter, letter_occurrences(letter))
@@ -45,17 +45,19 @@ class LowercaseStringStats
 end
 
 class LetterOccurrences
+  attr_reader :letter, :occurrences
+
   def initialize(letter, occurrences)
     @letter = letter
     @occurrences = occurrences
   end
 
   def greater?(stats_compared)
-    @occurrences > stats_compared.letter_occurrences(@letter)
+    @occurrences > stats_compared.letter_occurrences(@letter).occurrences
   end
 
   def less?(stats_compared)
-    @occurrences < stats_compared.letter_occurrences(@letter)
+    @occurrences < stats_compared.letter_occurrences(@letter).occurrences
   end
 end
 
@@ -110,20 +112,20 @@ class LetterOccurrenceDiff
 end
 
 class MaximumInString1 < LetterOccurrenceDiff
-  def initialize(letter, occurrences)
-    super('1', letter, occurrences)
+  def initialize(letter, letter_occurrences)
+    super('1', letter, letter_occurrences.occurrences)
   end
 end
 
 class MaximumInString2 < LetterOccurrenceDiff
-  def initialize(letter, occurrences)
-    super('2', letter, occurrences)
+  def initialize(letter, letter_occurrences)
+    super('2', letter, letter_occurrences.occurrences)
   end
 end
 
 class EqualInBothStrings < LetterOccurrenceDiff
-  def initialize(letter, occurrences)
-    super('=', letter, occurrences)
+  def initialize(letter, letter_occurrences)
+    super('=', letter, letter_occurrences.occurrences)
   end
 end
 
