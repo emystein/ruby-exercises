@@ -21,16 +21,41 @@ class LowercaseStringStats
     @count_by_letter.keys
   end
 
-  def count_by_letter(letter)
+  def letter_occurrences(letter)
     @count_by_letter[letter] ||= 0
   end
 
   def letters_diff(other_stats)
     common_letters = letters.union(other_stats.letters)
 
-    letter_diff_factory = LetterOccurrenceDiffFactory.new(self, other_stats)
+    common_letters.map { |letter| compare_occurrences_of(letter, other_stats) }
+  end
 
-    common_letters.map { |letter| letter_diff_factory.for(letter) }
+  def compare_occurrences_of(letter, stats_compared)
+    letter_occurrences = LetterOccurrences.new(letter, letter_occurrences(letter))
+
+    if letter_occurrences.greater?(stats_compared)
+      MaximumInString1.new(letter, letter_occurrences(letter))
+    elsif letter_occurrences.less?(stats_compared)
+      MaximumInString2.new(letter, stats_compared.letter_occurrences(letter))
+    else
+      EqualInBothStrings.new(letter, letter_occurrences(letter))
+    end
+  end
+end
+
+class LetterOccurrences
+  def initialize(letter, occurrences)
+    @letter = letter
+    @occurrences = occurrences
+  end
+
+  def greater?(stats_compared)
+    @occurrences > stats_compared.letter_occurrences(@letter)
+  end
+
+  def less?(stats_compared)
+    @occurrences < stats_compared.letter_occurrences(@letter)
   end
 end
 
@@ -64,33 +89,43 @@ class StringDiff
   end
 end
 
-class LetterOccurrenceDiffFactory
-  def initialize(string1_stats, string2_stats)
-    @string1_stats = string1_stats
-    @string2_stats = string2_stats
+class LetterOccurrenceDiff
+  attr_reader :string_number, :letter, :occurrences
+
+  def initialize(string_number, letter, occurrences)
+    @string_number = string_number
+    @letter = letter
+    @occurrences = occurrences
   end
 
-  def for(letter)
-    if @string1_stats.count_by_letter(letter) > @string2_stats.count_by_letter(letter)
-      string_number = '1'
-      letter_count = @string1_stats.count_by_letter(letter)
-    elsif @string1_stats.count_by_letter(letter) < @string2_stats.count_by_letter(letter)
-      string_number = '2'
-      letter_count = @string2_stats.count_by_letter(letter)
-    else
-      string_number = '='
-      letter_count = @string1_stats.count_by_letter(letter)
-    end
-
-    LetterOccurrenceDiff.new(string_number, letter, letter_count)
+  def ==(other)
+    @string_number == other.string_number &&
+      @letter == other.letter &&
+      @occurrences == other.occurrences
   end
-end
 
-LetterOccurrenceDiff = Struct.new(:string_number, :letter, :occurrences) {
   def format(format_to_apply)
     format_to_apply.format(self)
   end
-}
+end
+
+class MaximumInString1 < LetterOccurrenceDiff
+  def initialize(letter, occurrences)
+    super('1', letter, occurrences)
+  end
+end
+
+class MaximumInString2 < LetterOccurrenceDiff
+  def initialize(letter, occurrences)
+    super('2', letter, occurrences)
+  end
+end
+
+class EqualInBothStrings < LetterOccurrenceDiff
+  def initialize(letter, occurrences)
+    super('=', letter, occurrences)
+  end
+end
 
 class JoinStringNumberAndLetterRepetitions
   def format(elements)

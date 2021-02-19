@@ -5,11 +5,19 @@ describe 'LowercaseStringStats' do
   it 'count by letter' do
     stats = LowercaseStringStats.new('Are they here')
 
-    expect(stats.count_by_letter('r')).to eq(2)
-    expect(stats.count_by_letter('e')).to eq(4)
-    expect(stats.count_by_letter('t')).to eq(1)
-    expect(stats.count_by_letter('h')).to eq(2)
-    expect(stats.count_by_letter('y')).to eq(1)
+    expect(stats.letter_occurrences('r')).to eq(2)
+    expect(stats.letter_occurrences('e')).to eq(4)
+    expect(stats.letter_occurrences('t')).to eq(1)
+    expect(stats.letter_occurrences('h')).to eq(2)
+    expect(stats.letter_occurrences('y')).to eq(1)
+  end
+  it 'compare letter occurrences against other stats' do
+    stats1 = LowercaseStringStats.new('aaabbc')
+    stats2 = LowercaseStringStats.new('aab')
+
+    result = stats1.compare_occurrences_of('a', stats2)
+
+    expect(result).to eq(MaximumInString1.new('a', 3))
   end
 end
 
