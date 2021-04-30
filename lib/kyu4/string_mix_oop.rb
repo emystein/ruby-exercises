@@ -35,11 +35,11 @@ class LowercaseStringStats
 
   def compare_occurrences_of(letter, stats_compared)
     if letter_occurrences(letter).greater?(stats_compared)
-      MaximumInString1.new(letter, letter_occurrences(letter))
+      LetterOccurrenceDiff.maximumInString1(letter_occurrences(letter))
     elsif letter_occurrences(letter).less?(stats_compared)
-      MaximumInString2.new(letter, stats_compared.letter_occurrences(letter))
+      LetterOccurrenceDiff.maximumInString2(stats_compared.letter_occurrences(letter))
     else
-      EqualInBothStrings.new(letter, letter_occurrences(letter))
+      LetterOccurrenceDiff.sameOccurrenesInBothStrings(letter_occurrences(letter))
     end
   end
 end
@@ -50,6 +50,10 @@ class LetterOccurrences
   def initialize(letter, occurrences)
     @letter = letter
     @occurrences = occurrences
+  end
+
+  def ==(other)
+    @letter == other.letter && @occurrences == other.occurrences
   end
 
   def greater?(stats_compared)
@@ -94,10 +98,22 @@ end
 class LetterOccurrenceDiff
   attr_reader :string_number, :letter, :occurrences
 
-  def initialize(string_number, letter, occurrences)
+  def self.maximumInString1(letter_occurrences)
+    LetterOccurrenceDiff.new('1', letter_occurrences)
+  end
+
+  def self.maximumInString2(letter_occurrences)
+    LetterOccurrenceDiff.new('2', letter_occurrences)
+  end
+
+  def self.sameOccurrenesInBothStrings(letter_occurrences)
+    LetterOccurrenceDiff.new('=', letter_occurrences)
+  end
+
+  def initialize(string_number, letter_occurrences)
     @string_number = string_number
-    @letter = letter
-    @occurrences = occurrences
+    @letter = letter_occurrences.letter
+    @occurrences = letter_occurrences.occurrences
   end
 
   def ==(other)
@@ -108,24 +124,6 @@ class LetterOccurrenceDiff
 
   def format(format_to_apply)
     format_to_apply.format(self)
-  end
-end
-
-class MaximumInString1 < LetterOccurrenceDiff
-  def initialize(letter, letter_occurrences)
-    super('1', letter, letter_occurrences.occurrences)
-  end
-end
-
-class MaximumInString2 < LetterOccurrenceDiff
-  def initialize(letter, letter_occurrences)
-    super('2', letter, letter_occurrences.occurrences)
-  end
-end
-
-class EqualInBothStrings < LetterOccurrenceDiff
-  def initialize(letter, letter_occurrences)
-    super('=', letter, letter_occurrences.occurrences)
   end
 end
 

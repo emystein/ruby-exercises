@@ -17,7 +17,7 @@ describe 'LowercaseStringStats' do
 
     result = stats1.compare_occurrences_of('a', stats2)
 
-    expect(result).to eq(MaximumInString1.new('a', LetterOccurrences.new('a', 3)))
+    expect(result).to eq(LetterOccurrenceDiff.maximumInString1(LetterOccurrences.new('a', 3)))
   end
 end
 
